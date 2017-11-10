@@ -1,0 +1,184 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{33342251-ac29-43a3-bf9c-954575a79dac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{91929d0a-ebc4-4649-ba6c-c82628add1ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Assets">
+      <UniqueIdentifier>{e192ad9e-c65e-4c2f-8298-75675f0f3f76}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Actor">
+      <UniqueIdentifier>{1fd7f74e-df81-4355-9e0a-c32fbd37678b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\VulkanApp.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="assets\Asset.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="assets\AssetDatabase.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="assets\Material.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="assets\tiny_obj_loader.cc">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="assets\Geometry.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="assets\Texture.cpp">
+      <Filter>Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\Actor.cpp">
+      <Filter>Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\Object.cpp">
+      <Filter>Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\Camera.cpp">
+      <Filter>Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="actors\Light.cpp">
+      <Filter>Actor</Filter>
+    </ClCompile>
+    <ClCompile Include="core\PostProcess.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="core\VulkanApp.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Common.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\VulkanDebug.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\VulkanQueue.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\VulkanSwapChain.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Vertex.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="assets\Asset.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="assets\AssetDatabase.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="assets\Material.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="assets\tiny_obj_loader.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="assets\Geometry.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="assets\Texture.h">
+      <Filter>Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\Actor.h">
+      <Filter>Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\Object.h">
+      <Filter>Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\Camera.h">
+      <Filter>Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="actors\Light.h">
+      <Filter>Actor</Filter>
+    </ClInclude>
+    <ClInclude Include="core\PostProcess.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="shaders\shader.vert">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\shader.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\lighting.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\lighting.vert">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug0.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug1.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug2.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug3.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug4.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug5.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug6.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\postprocess.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\HDRHighlight.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\debug7.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\debug8.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\debug9.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\debug10.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\debug11.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\scene.frag">
+      <Filter>Shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>
