@@ -51,3 +51,6 @@ enum GBUFFER
 #define NUM_DEBUGDISPLAY 12
 
 #define VR_MODE 0
+
+#define LEFT_EYE 0
+#define RIGHT_EYE 1

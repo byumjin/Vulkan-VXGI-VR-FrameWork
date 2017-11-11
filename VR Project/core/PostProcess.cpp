@@ -64,8 +64,8 @@ uint32_t PostProcess::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags 
 
 void PostProcess::createImages()
 {
-	createImage(pExtent2D->width, pExtent2D->height, format, tiling, usage, properties, image, imageMemory);
-	imageView = createImageView(image, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	createImage(pExtent2D->width, pExtent2D->height, format, tiling, usage, properties, outputImage, outputImageMemory);
+	outputImageView = createImageView(outputImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 
@@ -77,8 +77,8 @@ void PostProcess::createImages(VkFormat formatParam, VkImageTiling tilingParam, 
 	properties = propertiesParam;
 
 
-	createImage(pExtent2D->width, pExtent2D->height, format, tiling, usage, properties, image, imageMemory);
-	imageView = createImageView(image, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	createImage(pExtent2D->width, pExtent2D->height, format, tiling, usage, properties, outputImage, outputImageMemory);
+	outputImageView = createImageView(outputImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 VkImageView PostProcess::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspectFlags)
@@ -175,7 +175,7 @@ void PostProcess::createFramebuffer()
 	fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	fbufCreateInfo.pNext = NULL;
 	fbufCreateInfo.renderPass = renderPass;
-	fbufCreateInfo.pAttachments = &imageView;
+	fbufCreateInfo.pAttachments = &outputImageView;
 	fbufCreateInfo.attachmentCount = 1;
 	fbufCreateInfo.width = pExtent2D->width;
 	fbufCreateInfo.height = pExtent2D->height;

@@ -152,13 +152,17 @@ public:
 
 	void createGraphicsPipeline(glm::vec2 Extent, glm::vec2 ScreenOffset);
 
-	void setGbuffers(std::vector<VkImageView>*  pGBufferImageViews, VkImageView pDepthImageView)
+	void setDubugBuffers(std::vector<VkImageView>*  pGBufferImageViews, VkImageView pDepthImageView, VkImageView pAdd01)
 	{
 		gBufferImageViews = pGBufferImageViews;
+		additionalImageView01 = pAdd01;
 		DepthImageView = pDepthImageView;
 	}
 
 	std::vector<VkImageView>*  gBufferImageViews;
+
+	VkImageView additionalImageView01;
+
 	VkImageView DepthImageView;
 
 private:

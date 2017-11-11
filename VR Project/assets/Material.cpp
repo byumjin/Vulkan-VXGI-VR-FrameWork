@@ -1073,9 +1073,17 @@ void DebugDisplayMaterial::createDescriptorSetLayout()
 	DepthTextureLayoutBinding.pImmutableSamplers = nullptr;
 	DepthTextureLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	//Additional01
+	VkDescriptorSetLayoutBinding Additional01RenderTargetLayoutBinding = {};
+	Additional01RenderTargetLayoutBinding.binding = 7;
+	Additional01RenderTargetLayoutBinding.descriptorCount = 1;
+	Additional01RenderTargetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	Additional01RenderTargetLayoutBinding.pImmutableSamplers = nullptr;
+	Additional01RenderTargetLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::array<VkDescriptorSetLayoutBinding, 7> bindings = { BasicColorRenderTargetLayoutBinding, SpecColorRenderTargetLayoutBinding, NormalColorRenderTargetLayoutBinding, EmissiveColorRenderTargetLayoutBinding,
-		uboLayoutBinding, fuboLayoutBinding, DepthTextureLayoutBinding };
+
+	std::array<VkDescriptorSetLayoutBinding, 8> bindings = { BasicColorRenderTargetLayoutBinding, SpecColorRenderTargetLayoutBinding, NormalColorRenderTargetLayoutBinding, EmissiveColorRenderTargetLayoutBinding,
+		uboLayoutBinding, fuboLayoutBinding, DepthTextureLayoutBinding, Additional01RenderTargetLayoutBinding };
 	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutInfo.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -1088,7 +1096,7 @@ void DebugDisplayMaterial::createDescriptorSetLayout()
 
 void DebugDisplayMaterial::createDescriptorPool()
 {
-	std::array<VkDescriptorPoolSize, 7> poolSizes = {};
+	std::array<VkDescriptorPoolSize, 8> poolSizes = {};
 	poolSizes[BASIC_COLOR].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[BASIC_COLOR].descriptorCount = 1;
 
@@ -1099,7 +1107,7 @@ void DebugDisplayMaterial::createDescriptorPool()
 	poolSizes[NORMAL_COLOR].descriptorCount = 1;
 
 	poolSizes[EMISSIVE_COLOR].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[EMISSIVE_COLOR].descriptorCount = 1;
+	poolSizes[EMISSIVE_COLOR].descriptorCount = 1;	
 
 	poolSizes[4].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[4].descriptorCount = 1;
@@ -1109,6 +1117,9 @@ void DebugDisplayMaterial::createDescriptorPool()
 
 	poolSizes[6].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[6].descriptorCount = 1;
+
+	poolSizes[7].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	poolSizes[7].descriptorCount = 1;
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
 	poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -1192,6 +1203,11 @@ void DebugDisplayMaterial::createDescriptorSet()
 	emissiveColorImageInfo.imageView = (*gBufferImageViews)[EMISSIVE_COLOR];
 	emissiveColorImageInfo.sampler = textureSampler;
 
+	VkDescriptorImageInfo additional01ImageInfo = {};
+	additional01ImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	additional01ImageInfo.imageView = additionalImageView01;
+	additional01ImageInfo.sampler = textureSampler;
+
 	VkDescriptorBufferInfo fragbufferInfo = {};
 	fragbufferInfo.buffer = uniformBuffer;
 	fragbufferInfo.offset = 0;
@@ -1203,7 +1219,7 @@ void DebugDisplayMaterial::createDescriptorSet()
 	dethImageInfo.sampler = textureSampler;
 
 
-	std::array<VkWriteDescriptorSet, 7> descriptorWrites = {};
+	std::array<VkWriteDescriptorSet, 8> descriptorWrites = {};
 
 	descriptorWrites[BASIC_COLOR].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptorWrites[BASIC_COLOR].dstSet = descriptorSet;
@@ -1260,6 +1276,14 @@ void DebugDisplayMaterial::createDescriptorSet()
 	descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	descriptorWrites[6].descriptorCount = 1;
 	descriptorWrites[6].pImageInfo = &dethImageInfo;
+
+	descriptorWrites[7].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[7].dstSet = descriptorSet;
+	descriptorWrites[7].dstBinding = 7;
+	descriptorWrites[7].dstArrayElement = 0;
+	descriptorWrites[7].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrites[7].descriptorCount = 1;
+	descriptorWrites[7].pImageInfo = &additional01ImageInfo;
 
 	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 
@@ -1468,6 +1492,11 @@ void DebugDisplayMaterial::updateDescriptorSet()
 	emissiveColorImageInfo.imageView = (*gBufferImageViews)[EMISSIVE_COLOR];
 	emissiveColorImageInfo.sampler = textureSampler;
 
+	VkDescriptorImageInfo additional01ImageInfo = {};
+	additional01ImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	additional01ImageInfo.imageView = additionalImageView01;
+	additional01ImageInfo.sampler = textureSampler;
+
 	VkDescriptorBufferInfo fragbufferInfo = {};
 	fragbufferInfo.buffer = uniformBuffer;
 	fragbufferInfo.offset = 0;
@@ -1479,7 +1508,7 @@ void DebugDisplayMaterial::updateDescriptorSet()
 	dethImageInfo.sampler = textureSampler;
 
 
-	std::array<VkWriteDescriptorSet, 7> descriptorWrites = {};
+	std::array<VkWriteDescriptorSet, 8> descriptorWrites = {};
 
 	descriptorWrites[BASIC_COLOR].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptorWrites[BASIC_COLOR].dstSet = descriptorSet;
@@ -1511,7 +1540,7 @@ void DebugDisplayMaterial::updateDescriptorSet()
 	descriptorWrites[EMISSIVE_COLOR].dstArrayElement = 0;
 	descriptorWrites[EMISSIVE_COLOR].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	descriptorWrites[EMISSIVE_COLOR].descriptorCount = 1;
-	descriptorWrites[EMISSIVE_COLOR].pImageInfo = &emissiveColorImageInfo;
+	descriptorWrites[EMISSIVE_COLOR].pImageInfo = &emissiveColorImageInfo;	
 
 	descriptorWrites[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	descriptorWrites[4].dstSet = descriptorSet;
@@ -1536,6 +1565,14 @@ void DebugDisplayMaterial::updateDescriptorSet()
 	descriptorWrites[6].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	descriptorWrites[6].descriptorCount = 1;
 	descriptorWrites[6].pImageInfo = &dethImageInfo;
+
+	descriptorWrites[7].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	descriptorWrites[7].dstSet = descriptorSet;
+	descriptorWrites[7].dstBinding = 7;
+	descriptorWrites[7].dstArrayElement = 0;
+	descriptorWrites[7].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorWrites[7].descriptorCount = 1;
+	descriptorWrites[7].pImageInfo = &additional01ImageInfo;
 
 	vkUpdateDescriptorSets(device, static_cast<uint32_t>(descriptorWrites.size()), descriptorWrites.data(), 0, nullptr);
 

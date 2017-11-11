@@ -149,21 +149,19 @@ void VulkanApp::initVulkan()
 
 	//[Stage] Post-process
 	PostProcess* sceneImageStage = new PostProcess;
-	sceneImageStage->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount);
-	//sceneImageStage->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	sceneImageStage->format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	sceneImageStage->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount);	
+	sceneImageStage->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	sceneImageStage->createCommandPool();
 
 	sceneStage = sceneImageStage;
 	lastPostProcess = sceneImageStage;
 
-	/*
+	
 	PostProcess* HDRHighlightPostProcess = new PostProcess;
 	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount);
 	HDRHighlightPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-	HDRHighlightPostProcess->createCommandPool();
-	lastPostProcess = HDRHighlightPostProcess;
-	*/
+	HDRHighlightPostProcess->createCommandPool();	
+	
 
 	//[Stage] Frame buffer
 	createFrameBufferCommandPool();
@@ -249,23 +247,24 @@ void VulkanApp::initVulkan()
 	lightingMaterial->LoadFromFilename(device, physicalDevice, sceneStage->commandPool, lightingQueue, "lighting_material");
 	lightingMaterial->creatDirectionalLightBuffer();
 	lightingMaterial->setShaderPaths("shaders/lighting.vert.spv", "shaders/lighting.frag.spv", "");
-
+	//Link
+	sceneStage->material = lightingMaterial;
 	
+
 	debugDisplayMaterials.resize(NUM_DEBUGDISPLAY);
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
 		debugDisplayMaterials[i] = new DebugDisplayMaterial;
 		debugDisplayMaterials[i]->LoadFromFilename(device, physicalDevice, deferredCommandPool, lightingQueue, "debugDisplay_material");
-		debugDisplayMaterials[i]->setShaderPaths("shaders/lighting.vert.spv", "shaders/debug" + convertToString((int)i) + ".frag.spv", "");
+		debugDisplayMaterials[i]->setShaderPaths("shaders/debug.vert.spv", "shaders/debug" + convertToString((int)i) + ".frag.spv", "");
 	}
 
 	//Post Process Materials
-	/*
-
 	hdrHighlightMaterial = new HDRHighlightMaterial;
 	hdrHighlightMaterial->LoadFromFilename(device, physicalDevice, HDRHighlightPostProcess->commandPool, postProcessQueue, "hdrHighlight_material");
 	hdrHighlightMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/HDRHighlight.frag.spv", "");
-	*/
+	//Link
+	HDRHighlightPostProcess->material = hdrHighlightMaterial;
 
 	//Frame Buffer Materials
 	frameBufferMaterial = new FinalRenderingMaterial;
@@ -306,7 +305,8 @@ void VulkanApp::initVulkan()
 
 	//04. Create Image views
 	createImageViews();
-	sceneStage->imageView = sceneImageView;
+	//sceneStage->imageView = sceneImageView;
+
 	//sceneStage->material = lightingMaterial;
 	//LightingMaterial* psex = dynamic_cast<LightingMaterial*>(sceneStage->material);
 	//psex->ImageView = sceneImageView;
@@ -317,7 +317,7 @@ void VulkanApp::initVulkan()
 	//05. Create Renderpass
 	createDeferredRenderPass();
 	sceneStage->createRenderPass();	
-	//HDRHighlightPostProcess->createRenderPass();
+	HDRHighlightPostProcess->createRenderPass();
 	createFrameBufferRenderPass();
 
 
@@ -328,12 +328,12 @@ void VulkanApp::initVulkan()
 	//07. Create FrameBuffers
 	createDeferredFramebuffer();
 	sceneStage->createFramebuffer();
-	//HDRHighlightPostProcess->createFramebuffer();
+	HDRHighlightPostProcess->createFramebuffer();
 	createFramebuffers();
 
 
 
-	//07. Create GraphicsPipelines
+	//08. Create GraphicsPipelines
 	//[objects]
 	for (size_t i = 0; i < materialManager.size(); i++)
 	{
@@ -351,15 +351,21 @@ void VulkanApp::initVulkan()
 	}
 
 	//[global]
-
 	lightingMaterial->setGbuffers(&gBufferImageViews, depthImageView);
 	lightingMaterial->createDescriptorSet();
 	lightingMaterial->connectRenderPass(sceneStage->renderPass);
 	lightingMaterial->createGraphicsPipeline(swapChainExtent);
 
+	//[postProcess]
+	hdrHighlightMaterial->setImageViews(sceneStage->outputImageView, depthImageView);
+	hdrHighlightMaterial->createDescriptorSet();
+	hdrHighlightMaterial->connectRenderPass(HDRHighlightPostProcess->renderPass);
+	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(HDRHighlightPostProcess->pExtent2D->width, HDRHighlightPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
+
+	//[debug]
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
-		debugDisplayMaterials[i]->setGbuffers(&gBufferImageViews, depthImageView);
+		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, HDRHighlightPostProcess->outputImageView);
 		debugDisplayMaterials[i]->createDescriptorSet();
 		debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);
 	}
@@ -381,44 +387,42 @@ void VulkanApp::initVulkan()
 	debugDisplayMaterials[11]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight * 3.0));
 	
 
-	//[postProcess]
-	/*
-	hdrHighlightMaterial->setImageViews(HDRHighlightPostProcess->imageView, depthImageView);
-	hdrHighlightMaterial->createDescriptorSet();
-	hdrHighlightMaterial->connectRenderPass(HDRHighlightPostProcess->renderPass);
-	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(HDRHighlightPostProcess->pExtent2D->width, HDRHighlightPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
-	*/
+	
+	
 
 	//[framebuffer]
-	frameBufferMaterial->setImageViews(lastPostProcess->imageView, depthImageView);
+	frameBufferMaterial->setImageViews(lastPostProcess->outputImageView, depthImageView);
 	frameBufferMaterial->createDescriptorSet();
 	frameBufferMaterial->connectRenderPass(frameBufferRenderPass);
 	frameBufferMaterial->createGraphicsPipeline(glm::vec2(swapChainExtent.width, swapChainExtent.height), glm::vec2(0.0, 0.0));
 
 	
 	
-	//08. Create CommandBuffers
+	//09. Create CommandBuffers
 	createDeferredCommandBuffers();
 
 	sceneStage->offScreenPlane = offScreenPlane;
 	sceneStage->material = lightingMaterial;
 	sceneStage->createCommandBuffers();
 
-	/*
+	
 	HDRHighlightPostProcess->offScreenPlane = offScreenPlane;
 	HDRHighlightPostProcess->material = hdrHighlightMaterial;
-	hdrHighlightMaterial->setImageViews(sceneStage->imageView, depthImageView);
-
-	transitionImageLayout(sceneImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, HDRHighlightPostProcess->commandPool);
 	HDRHighlightPostProcess->createCommandBuffers();
-	*/
+
 
 	createFrameBufferCommandBuffers();
 
 	createSemaphores();
 
-	//postProcessStages.push_back(sceneStage);
-	//postProcessStages.push_back(HDRHighlightPostProcess);
+	postProcessStages.push_back(sceneStage);
+	postProcessStages.push_back(HDRHighlightPostProcess);
+
+
+	for (size_t i = 0; i < postProcessStages.size(); i++)
+	{
+		postProcessStages[i]->createSemaphore();
+	}
 }
 
 void VulkanApp::createInstance()
@@ -611,7 +615,7 @@ void  VulkanApp::createFramebufferDescriptorSet()
 
 	VkDescriptorImageInfo sceneColorImageInfo = {};
 	sceneColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	sceneColorImageInfo.imageView = lastPostProcess->imageView;
+	sceneColorImageInfo.imageView = lastPostProcess->outputImageView;
 	sceneColorImageInfo.sampler = textureSampler;
 
 	VkDescriptorBufferInfo fragbufferInfo = {};
@@ -998,19 +1002,15 @@ void VulkanApp::reCreateSwapChain()
 	createSceneBuffer();
 	createImageViews();
 
-	
+	//sceneStage->createImages();
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
-		PostProcess* thisPostProcess = postProcessStages[i];
-
-		/*
-		if(i == 0)
-		postProcessStages[0]->imageView = sceneStage->imageView;
-		*/
-
+		PostProcess* thisPostProcess = postProcessStages[i];		
 		thisPostProcess->createImages();
 	}
+
+	
 
 	
 
@@ -1019,7 +1019,7 @@ void VulkanApp::reCreateSwapChain()
 	//REDNER PASS
 	createDeferredRenderPass();
 	
-	sceneStage->createRenderPass();
+	//sceneStage->createRenderPass();
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
@@ -1058,7 +1058,7 @@ void VulkanApp::reCreateSwapChain()
 
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
-		debugDisplayMaterials[i]->setGbuffers(&gBufferImageViews, depthImageView);
+		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[1]->outputImageView);
 		debugDisplayMaterials[i]->updateDescriptorSet();
 		debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);		
 	}
@@ -1079,46 +1079,15 @@ void VulkanApp::reCreateSwapChain()
 	debugDisplayMaterials[10]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 2.0, debugHeight * 3.0));
 	debugDisplayMaterials[11]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight * 3.0));
 
-
-	for (size_t i = 0; i < postProcessStages.size(); i++)
-	{
-		PostProcess* thisPostProcess = postProcessStages[i];
-
-		LightingMaterial* tempLightingMaterial = dynamic_cast<LightingMaterial *>(thisPostProcess->material);
-
-		if(tempLightingMaterial != NULL)
-		{
-			thisPostProcess->createFramebuffer();
-			thisPostProcess->createCommandBuffers();
-
-			continue;
-		}
-
-		
-		HDRHighlightMaterial* tempHDRHighlightMaterial = dynamic_cast<HDRHighlightMaterial *>(thisPostProcess->material);
-
-		if (tempHDRHighlightMaterial != NULL)
-		{
-			tempHDRHighlightMaterial->setImageViews(thisPostProcess->imageView, depthImageView);
-			tempHDRHighlightMaterial->createDescriptorSet();
-			tempHDRHighlightMaterial->connectRenderPass(thisPostProcess->renderPass);
-			tempHDRHighlightMaterial->createGraphicsPipeline(glm::vec2(thisPostProcess->pExtent2D->width, thisPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
-
-			thisPostProcess->createFramebuffer();
-			thisPostProcess->createCommandBuffers();
-
-			continue;
-		}
-		
-	}
-
-	sceneStage->imageView = sceneImageView;
 	
-	//sceneStage->material = frameBufferMaterial;
-	//FinalRenderingMaterial* psex = dynamic_cast<FinalRenderingMaterial*>(sceneStage->material);
-	//psex->ImageView = sceneImageView;
+	//[postProcess]
+	hdrHighlightMaterial->setImageViews(sceneStage->outputImageView, depthImageView);
+	hdrHighlightMaterial->updateDescriptorSet();
+	hdrHighlightMaterial->connectRenderPass(postProcessStages[1]->renderPass);
+	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[1]->pExtent2D->width, postProcessStages[1]->pExtent2D->height), glm::vec2(0.0, 0.0));
+
 	
-	frameBufferMaterial->setImageViews(lastPostProcess->imageView, depthImageView);
+	frameBufferMaterial->setImageViews(lastPostProcess->outputImageView, depthImageView);
 	frameBufferMaterial->updateDescriptorSet();
 	frameBufferMaterial->connectRenderPass(frameBufferRenderPass);
 	frameBufferMaterial->createGraphicsPipeline(glm::vec2(swapChainExtent.width, swapChainExtent.height), glm::vec2(0.0, 0.0));
@@ -1127,10 +1096,14 @@ void VulkanApp::reCreateSwapChain()
 	createDeferredFramebuffer();
 	createDeferredCommandBuffers();
 	
+	for (size_t i = 0; i < postProcessStages.size(); i++)
+	{
+		PostProcess* thisPostProcess = postProcessStages[i];
 
-	sceneStage->createFramebuffer();
-	sceneStage->createCommandBuffers();
+		thisPostProcess->createFramebuffer();
+		thisPostProcess->createCommandBuffers();
 
+	}
 	createFramebuffers();
 	createFrameBufferCommandBuffers();
 }
@@ -1844,27 +1817,39 @@ void VulkanApp::drawFrame()
 	{
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
-	
-	//lightingQueue
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = firstSignalSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &sceneStage->commandBuffer; // frameBufferCommandBuffers[imageIndex];
-
-	VkSemaphore signalSemaphores[] = { renderFinishedSemaphore };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-
-	if (vkQueueSubmit(lightingQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to submit draw command buffer!");
-	}
 
 	//postProcessQueue
-	
+	VkSemaphore prevSemaphore = imageAvailableSemaphore;
+	VkSemaphore currentSemaphore;
+
+	for(size_t i = 0; i < postProcessStages.size(); i++)
+	{
+		PostProcess* thisPostProcess = postProcessStages[i];
+
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &prevSemaphore;
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &thisPostProcess->commandBuffer;
+
+		currentSemaphore = thisPostProcess->postProcessSemaphore;
+
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &currentSemaphore;
+
+		if (vkQueueSubmit(thisPostProcess->material->queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to submit draw command buffer!");
+		}
+
+		prevSemaphore = currentSemaphore;
+	}
+
+
+
+	//frameQueue
 	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = signalSemaphores;
+	submitInfo.pWaitSemaphores = &currentSemaphore;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &frameBufferCommandBuffers[imageIndex];
@@ -1873,7 +1858,7 @@ void VulkanApp::drawFrame()
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = postProcessSignalSemaphores;
 
-	if (vkQueueSubmit(lightingQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+	if (vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
@@ -2101,21 +2086,23 @@ void VulkanApp::cleanUpSwapChain()
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
 		PostProcess* thisPostProcess = postProcessStages[i];
-		vkFreeMemory(device, thisPostProcess->imageMemory, nullptr);
-		vkDestroyImageView(device, thisPostProcess->imageView, nullptr);
-		vkDestroyImage(device, thisPostProcess->image, nullptr);
+		thisPostProcess->cleanUp();
+		
 
 		vkDestroyFramebuffer(device, thisPostProcess->frameBuffer, nullptr);
 		vkFreeCommandBuffers(device, thisPostProcess->commandPool, 1, &thisPostProcess->commandBuffer);
 	}
+
+	
 
 	//delete Scene
 	vkFreeMemory(device, sceneImageMemories, nullptr);
 	vkDestroyImageView(device, sceneImageView, nullptr);
 	vkDestroyImage(device, sceneImage, nullptr);
 
-	vkDestroyFramebuffer(device, sceneStage->frameBuffer, nullptr);
-	vkFreeCommandBuffers(device, sceneStage->commandPool, 1, &sceneStage->commandBuffer);
+	//sceneStage->cleanUp();
+	//vkDestroyFramebuffer(device, sceneStage->frameBuffer, nullptr);
+	//vkFreeCommandBuffers(device, sceneStage->commandPool, 1, &sceneStage->commandBuffer);
 	
 
 
@@ -2151,14 +2138,14 @@ void VulkanApp::cleanUpSwapChain()
 	}
 
 	lightingMaterial->cleanPipeline();
-	
+	hdrHighlightMaterial->cleanPipeline();
 
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
 		debugDisplayMaterials[i]->cleanPipeline();
 	}
 
-	//hdrHighlightMaterial->cleanPipeline();
+	
 
 	frameBufferMaterial->cleanPipeline();
 	
@@ -2168,7 +2155,15 @@ void VulkanApp::cleanUpSwapChain()
 	
 	vkDestroyRenderPass(device, deferredRenderPass, nullptr);
 
-	vkDestroyRenderPass(device, sceneStage->renderPass, nullptr);
+
+	for (size_t i = 0; i < postProcessStages.size(); i++)
+	{
+		PostProcess* thisPostProcess = postProcessStages[i];
+
+		vkDestroyRenderPass(device, thisPostProcess->renderPass, nullptr);
+	}
+
+	//vkDestroyRenderPass(device, sceneStage->renderPass, nullptr);
 
 
 	vkDestroyRenderPass(device, frameBufferRenderPass, nullptr);
@@ -2188,7 +2183,7 @@ void VulkanApp::cleanUp()
 	AssetDatabase::GetInstance()->cleanUp();
 
 	delete lightingMaterial;
-	//delete hdrHighlightMaterial;
+	delete hdrHighlightMaterial;
 	delete frameBufferMaterial;
 
 
@@ -2215,8 +2210,8 @@ void VulkanApp::cleanUp()
 		delete thisPostProcess;
 	}
 
-	vkDestroyCommandPool(device, sceneStage->commandPool, nullptr);
-	delete sceneStage;
+	//vkDestroyCommandPool(device, sceneStage->commandPool, nullptr);
+	//delete sceneStage;
 
 	vkDestroyCommandPool(device, deferredCommandPool, nullptr);
 

@@ -8,10 +8,18 @@
 class PostProcess
 {
 public:
+	~PostProcess()
+	{
+		vkDestroySemaphore(device, postProcessSemaphore, nullptr);
+	}
 
 	void cleanUp()
 	{
+		vkFreeMemory(device, outputImageMemory, nullptr);
+		vkDestroyImageView(device, outputImageView, nullptr);
+		vkDestroyImage(device, outputImage, nullptr);
 
+		
 	}
 
 	void Initialize(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkSurfaceKHR surfaceParam, VkExtent2D* extent2DParami, int LayerCount);
@@ -32,6 +40,17 @@ public:
 	void createCommandPool();
 	void createCommandBuffers();
 
+	void createSemaphore()
+	{
+		VkSemaphoreCreateInfo semaphoreInfo = {};
+		semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+		if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &postProcessSemaphore) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create semaphores!");
+		}
+	}
+
 
 	VkRenderPass renderPass;
 	VkCommandPool commandPool;
@@ -50,9 +69,9 @@ public:
 	VkPhysicalDevice physicalDevice;
 	VkSurfaceKHR surface;
 
-	VkImage image;
-	VkImageView imageView;
-	VkDeviceMemory imageMemory;
+	VkImage outputImage;
+	VkImageView outputImageView;
+	VkDeviceMemory outputImageMemory;
 
 	singleTriangular* offScreenPlane;
 
@@ -61,5 +80,7 @@ public:
 	int LayerCount;
 
 	Material* material;
+
+	VkSemaphore postProcessSemaphore;
 
 };

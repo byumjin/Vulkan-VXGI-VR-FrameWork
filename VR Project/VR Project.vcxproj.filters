@@ -154,30 +154,33 @@
     <CustomBuild Include="shaders\debug6.frag">
       <Filter>Shaders</Filter>
     </CustomBuild>
+    <CustomBuild Include="shaders\debug7.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug8.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug9.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug10.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\debug11.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\HDRHighlight.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\postprocess.vert">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\scene.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\postprocess.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\HDRHighlight.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\debug7.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\debug8.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\debug9.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\debug10.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\debug11.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\scene.frag">
+    <None Include="shaders\debug.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
