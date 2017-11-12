@@ -46,7 +46,7 @@ void mouseDownCallback(GLFWwindow* window, int button, int action, int mods) {
 
 void mouseMoveCallback(GLFWwindow* window, double xPosition, double yPosition)
 {
-	if (leftMouseDown)
+	if (rightMouseDown)
 	{
 		double sensitivity = 0.5;
 		float deltaX = static_cast<float>((previousX - xPosition) * sensitivity);
@@ -57,7 +57,7 @@ void mouseMoveCallback(GLFWwindow* window, double xPosition, double yPosition)
 		previousX = xPosition;
 		previousY = yPosition;
 	}
-	else if (rightMouseDown)
+	else if (leftMouseDown)
 	{
 		double deltaZ = static_cast<float>((previousY - yPosition) * -0.05);
 
@@ -79,13 +79,13 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 	if (action == GLFW_REPEAT || action == GLFW_PRESS)
 	{
 		if(key == GLFW_KEY_W || key == GLFW_KEY_UP)
-			camera.UpdatePosition(0.0f, 0.0f, (float)-0.2);
+			camera.UpdatePosition(0.0f, 0.0f, (float)-2.0);
 		else if(key == GLFW_KEY_S || key == GLFW_KEY_DOWN)
-			camera.UpdatePosition(0.0f, 0.0f, (float)0.2);
+			camera.UpdatePosition(0.0f, 0.0f, (float)2.0);
 		else if(key == GLFW_KEY_A || key == GLFW_KEY_LEFT)
-			camera.UpdatePosition((float)-0.2f, 0.0f, 0.0f);
+			camera.UpdatePosition((float)-2.0f, 0.0f, 0.0f);
 		else if(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
-			camera.UpdatePosition((float)0.2f, 0.0f, 0.0f);
+			camera.UpdatePosition((float)2.0f, 0.0f, 0.0f);
 		else if(key == GLFW_KEY_G)
 		{
 			bDeubDisply = !bDeubDisply;
@@ -149,19 +149,45 @@ void VulkanApp::initVulkan()
 
 	//[Stage] Post-process
 	PostProcess* sceneImageStage = new PostProcess;
-	sceneImageStage->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount);	
+	sceneImageStage->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f));
 	sceneImageStage->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	sceneImageStage->createCommandPool();
 
 	sceneStage = sceneImageStage;
-	lastPostProcess = sceneImageStage;
+	//lastPostProcess = sceneImageStage;
 
 	
 	PostProcess* HDRHighlightPostProcess = new PostProcess;
-	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount);
+
+	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 6, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
 	HDRHighlightPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	HDRHighlightPostProcess->createCommandPool();	
 	
+
+	PostProcess* HorizontalBlurPostProcess = new PostProcess;
+	HorizontalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	HorizontalBlurPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	HorizontalBlurPostProcess->createCommandPool();
+	
+	
+	PostProcess* VerticalBlurPostProcess = new PostProcess;
+	VerticalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	VerticalBlurPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VerticalBlurPostProcess->createCommandPool();
+
+	PostProcess* LastPostProcess = new PostProcess;
+	LastPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f));
+	LastPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	LastPostProcess->createCommandPool();
+
+	theLastPostProcess = LastPostProcess;
+
+
+	postProcessStages.push_back(sceneStage);
+	postProcessStages.push_back(HDRHighlightPostProcess);
+	postProcessStages.push_back(HorizontalBlurPostProcess);
+	postProcessStages.push_back(VerticalBlurPostProcess);
+	postProcessStages.push_back(LastPostProcess);
 
 	//[Stage] Frame buffer
 	createFrameBufferCommandPool();
@@ -183,11 +209,16 @@ void VulkanApp::initVulkan()
 
 	//[Geometries]
 	AssetDatabase::SetDevice(device, physicalDevice, deferredCommandPool, objectDrawQueue);
+	
 	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Johanna.obj");
 	AssetDatabase::GetInstance()->geoList.push_back("objects/Johanna.obj");
 
 	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Chromie.obj");
 	AssetDatabase::GetInstance()->geoList.push_back("objects/Chromie.obj");
+	
+
+	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Cerberus/Cerberus.obj");
+	AssetDatabase::GetInstance()->geoList.push_back("objects/Cerberus/Cerberus.obj");
 
 	//[Textures] 
 	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_diff.tga");
@@ -213,6 +244,18 @@ void VulkanApp::initVulkan()
 
 	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_emis.tga");
 	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_chromie_ultimate_emis.tga");
+
+	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_A.tga");
+	AssetDatabase::GetInstance()->textureList.push_back("textures/Cerberus/Cerberus_A.tga");
+
+	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_S.tga");
+	AssetDatabase::GetInstance()->textureList.push_back("textures/Cerberus/Cerberus_S.tga");
+
+	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_N.tga");
+	AssetDatabase::GetInstance()->textureList.push_back("textures/Cerberus/Cerberus_N.tga");
+
+	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_E.tga");
+	AssetDatabase::GetInstance()->textureList.push_back("textures/Cerberus/Cerberus_E.tga");
 
 
 
@@ -241,6 +284,17 @@ void VulkanApp::initVulkan()
 
 	materialManager.push_back(pMat2);
 
+	ObjectDrawMaterial* pMat3 = new ObjectDrawMaterial;
+	pMat3->LoadFromFilename(device, physicalDevice, deferredCommandPool, objectDrawQueue, "standard_material3");
+	pMat3->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_A.tga"));
+	pMat3->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_S.tga"));
+	pMat3->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_N.tga"));
+	pMat3->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_E.tga"));
+	pMat3->setShaderPaths("shaders/shader.vert.spv", "shaders/shader.frag.spv", "");
+	pMat3->createDescriptorSet();
+
+	materialManager.push_back(pMat3);
+
 	//Global Materials
 	lightingMaterial = new LightingMaterial;	
 	lightingMaterial->setDirectionalLights(&directionLights);	
@@ -263,8 +317,32 @@ void VulkanApp::initVulkan()
 	hdrHighlightMaterial = new HDRHighlightMaterial;
 	hdrHighlightMaterial->LoadFromFilename(device, physicalDevice, HDRHighlightPostProcess->commandPool, postProcessQueue, "hdrHighlight_material");
 	hdrHighlightMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/HDRHighlight.frag.spv", "");
+	hdrHighlightMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+
 	//Link
 	HDRHighlightPostProcess->material = hdrHighlightMaterial;
+
+	horizontalMaterial = new BlurMaterial;
+	horizontalMaterial->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess->commandPool, postProcessQueue, "horizontalBlur_material");
+	horizontalMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/horizontalBlur.frag.spv", "");
+	horizontalMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+
+	HorizontalBlurPostProcess->material = horizontalMaterial;
+	
+	verticalMaterial = new BlurMaterial;
+	verticalMaterial->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess->commandPool, postProcessQueue, "verticalBlur_material");
+	verticalMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/verticalBlur.frag.spv", "");
+	verticalMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	
+	VerticalBlurPostProcess->material = verticalMaterial;
+
+	lastPostProcessMaterial = new LastPostProcessgMaterial;
+	lastPostProcessMaterial->LoadFromFilename(device, physicalDevice, LastPostProcess->commandPool, postProcessQueue, "lastPostProcess_material");
+	lastPostProcessMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/lastPostProcess.frag.spv", "");
+
+	LastPostProcess->material = lastPostProcessMaterial;
+
+	
 
 	//Frame Buffer Materials
 	frameBufferMaterial = new FinalRenderingMaterial;
@@ -276,9 +354,9 @@ void VulkanApp::initVulkan()
 
 
 	//Create Objects
+	
 	Object obj01;
-
-	obj01.initiation("Alien", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Johanna.obj"));
+	obj01.initiation("Johanna", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Johanna.obj"));
 	obj01.connectMaterial(pMat);
 	objectManager.push_back(obj01);
 	
@@ -290,6 +368,14 @@ void VulkanApp::initVulkan()
 	obj02.update();
 	obj02.connectMaterial(pMat2);
 	objectManager.push_back(obj02);
+	
+
+	Object obj03;
+	obj03.initiation("Cerberus", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Cerberus/Cerberus.obj"));
+	obj03.scale = glm::vec3(10.0f);
+	obj03.update();
+	obj03.connectMaterial(pMat3);
+	objectManager.push_back(obj03);
 
 
 	offScreenPlane = new singleTriangular;
@@ -305,19 +391,16 @@ void VulkanApp::initVulkan()
 
 	//04. Create Image views
 	createImageViews();
-	//sceneStage->imageView = sceneImageView;
-
-	//sceneStage->material = lightingMaterial;
-	//LightingMaterial* psex = dynamic_cast<LightingMaterial*>(sceneStage->material);
-	//psex->ImageView = sceneImageView;
-	//sceneStage->material->    imageView = sceneImageView;
-	//HDRHighlightPostProcess->material-> imageView = sceneStage->imageView;
 
 
 	//05. Create Renderpass
 	createDeferredRenderPass();
-	sceneStage->createRenderPass();	
-	HDRHighlightPostProcess->createRenderPass();
+
+	for (size_t i = 0; i < postProcessStages.size(); i++)
+	{
+		postProcessStages[i]->createRenderPass();
+	}
+
 	createFrameBufferRenderPass();
 
 
@@ -327,8 +410,12 @@ void VulkanApp::initVulkan()
 
 	//07. Create FrameBuffers
 	createDeferredFramebuffer();
-	sceneStage->createFramebuffer();
-	HDRHighlightPostProcess->createFramebuffer();
+
+	for (size_t i = 0; i < postProcessStages.size(); i++)
+	{
+		postProcessStages[i]->createFramebuffer();
+	}
+
 	createFramebuffers();
 
 
@@ -362,6 +449,23 @@ void VulkanApp::initVulkan()
 	hdrHighlightMaterial->connectRenderPass(HDRHighlightPostProcess->renderPass);
 	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(HDRHighlightPostProcess->pExtent2D->width, HDRHighlightPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
 
+	horizontalMaterial->setImageViews(HDRHighlightPostProcess->outputImageView, depthImageView);
+	horizontalMaterial->createDescriptorSet();
+	horizontalMaterial->connectRenderPass(HorizontalBlurPostProcess->renderPass);
+	horizontalMaterial->createGraphicsPipeline(glm::vec2(HorizontalBlurPostProcess->pExtent2D->width, HorizontalBlurPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
+
+	verticalMaterial->setImageViews(HorizontalBlurPostProcess->outputImageView, depthImageView);
+	verticalMaterial->createDescriptorSet();
+	verticalMaterial->connectRenderPass(VerticalBlurPostProcess->renderPass);
+	verticalMaterial->createGraphicsPipeline(glm::vec2(VerticalBlurPostProcess->pExtent2D->width, VerticalBlurPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
+	
+	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, VerticalBlurPostProcess->outputImageView, depthImageView);
+	lastPostProcessMaterial->createDescriptorSet();
+	lastPostProcessMaterial->connectRenderPass(LastPostProcess->renderPass);
+	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(LastPostProcess->pExtent2D->width, LastPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
+	
+
+
 	//[debug]
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
@@ -387,11 +491,8 @@ void VulkanApp::initVulkan()
 	debugDisplayMaterials[11]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight * 3.0));
 	
 
-	
-	
-
 	//[framebuffer]
-	frameBufferMaterial->setImageViews(lastPostProcess->outputImageView, depthImageView);
+	frameBufferMaterial->setImageViews(theLastPostProcess->outputImageView, depthImageView);
 	frameBufferMaterial->createDescriptorSet();
 	frameBufferMaterial->connectRenderPass(frameBufferRenderPass);
 	frameBufferMaterial->createGraphicsPipeline(glm::vec2(swapChainExtent.width, swapChainExtent.height), glm::vec2(0.0, 0.0));
@@ -401,24 +502,16 @@ void VulkanApp::initVulkan()
 	//09. Create CommandBuffers
 	createDeferredCommandBuffers();
 
-	sceneStage->offScreenPlane = offScreenPlane;
-	sceneStage->material = lightingMaterial;
-	sceneStage->createCommandBuffers();
-
-	
-	HDRHighlightPostProcess->offScreenPlane = offScreenPlane;
-	HDRHighlightPostProcess->material = hdrHighlightMaterial;
-	HDRHighlightPostProcess->createCommandBuffers();
-
+	for (size_t i = 0; i < postProcessStages.size(); i++)
+	{
+		postProcessStages[i]->offScreenPlane = offScreenPlane;
+		postProcessStages[i]->createCommandBuffers();
+	}
 
 	createFrameBufferCommandBuffers();
 
 	createSemaphores();
-
-	postProcessStages.push_back(sceneStage);
-	postProcessStages.push_back(HDRHighlightPostProcess);
-
-
+	
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
 		postProcessStages[i]->createSemaphore();
@@ -578,7 +671,7 @@ void  VulkanApp::createFramebufferDescriptorSet()
 	}
 
 	VkDescriptorBufferInfo bufferInfo = {};
-	bufferInfo.buffer = lastPostProcess->material->uniformBuffer;
+	bufferInfo.buffer = frameBufferMaterial->uniformBuffer;// lastPostProcess->material->uniformBuffer;
 	bufferInfo.offset = 0;
 	bufferInfo.range = sizeof(UniformBufferObject);
 
@@ -615,11 +708,11 @@ void  VulkanApp::createFramebufferDescriptorSet()
 
 	VkDescriptorImageInfo sceneColorImageInfo = {};
 	sceneColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	sceneColorImageInfo.imageView = lastPostProcess->outputImageView;
+	sceneColorImageInfo.imageView = theLastPostProcess->outputImageView;
 	sceneColorImageInfo.sampler = textureSampler;
 
 	VkDescriptorBufferInfo fragbufferInfo = {};
-	fragbufferInfo.buffer = lastPostProcess->material->uniformBuffer;
+	fragbufferInfo.buffer = frameBufferMaterial->uniformBuffer;// lastPostProcess->material->uniformBuffer;
 	fragbufferInfo.offset = 0;
 	fragbufferInfo.range = sizeof(UniformBufferObject);
 
@@ -1009,17 +1102,10 @@ void VulkanApp::reCreateSwapChain()
 		PostProcess* thisPostProcess = postProcessStages[i];		
 		thisPostProcess->createImages();
 	}
-
 	
-
-	
-
-
 
 	//REDNER PASS
 	createDeferredRenderPass();
-	
-	//sceneStage->createRenderPass();
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
@@ -1058,7 +1144,7 @@ void VulkanApp::reCreateSwapChain()
 
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
-		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[1]->outputImageView);
+		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[3]->outputImageView);
 		debugDisplayMaterials[i]->updateDescriptorSet();
 		debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);		
 	}
@@ -1086,8 +1172,23 @@ void VulkanApp::reCreateSwapChain()
 	hdrHighlightMaterial->connectRenderPass(postProcessStages[1]->renderPass);
 	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[1]->pExtent2D->width, postProcessStages[1]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
+	horizontalMaterial->setImageViews(postProcessStages[1]->outputImageView, depthImageView);
+	horizontalMaterial->updateDescriptorSet();
+	horizontalMaterial->connectRenderPass(postProcessStages[2]->renderPass);
+	horizontalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[2]->pExtent2D->width, postProcessStages[2]->pExtent2D->height), glm::vec2(0.0, 0.0));
+
+	verticalMaterial->setImageViews(postProcessStages[2]->outputImageView, depthImageView);
+	verticalMaterial->updateDescriptorSet();
+	verticalMaterial->connectRenderPass(postProcessStages[3]->renderPass);
+	verticalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[3]->pExtent2D->width, postProcessStages[3]->pExtent2D->height), glm::vec2(0.0, 0.0));
+
+	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, postProcessStages[3]->outputImageView, depthImageView);
+	lastPostProcessMaterial->updateDescriptorSet();
+	lastPostProcessMaterial->connectRenderPass(postProcessStages[4]->renderPass);
+	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[4]->pExtent2D->width, postProcessStages[4]->pExtent2D->height), glm::vec2(0.0, 0.0));
 	
-	frameBufferMaterial->setImageViews(lastPostProcess->outputImageView, depthImageView);
+
+	frameBufferMaterial->setImageViews(theLastPostProcess->outputImageView, depthImageView);
 	frameBufferMaterial->updateDescriptorSet();
 	frameBufferMaterial->connectRenderPass(frameBufferRenderPass);
 	frameBufferMaterial->createGraphicsPipeline(glm::vec2(swapChainExtent.width, swapChainExtent.height), glm::vec2(0.0, 0.0));
@@ -1145,10 +1246,6 @@ void VulkanApp::createImageViews()
 	for (uint32_t i = 0; i < swapChainImages.size(); i++)
 	{
 		swapChainImageViews[i] = createImageView(swapChainImages[i], swapChainImageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
-
-		//Texture *pTexture = AssetDatabase::GetInstance()->FindAsset<Texture>("textures/COLOR_Shockwave.png");
-
-		//swapChainImageViews[i] = pTexture->createImageView(swapChainImages[i], swapChainImageFormat);
 	}
 }
 
@@ -1970,11 +2067,13 @@ void VulkanApp::updateUniformBuffers()
 		ubo.modelViewProjMat = camera.viewProjMat * thisObject.modelMat;
 
 		glm::mat4 A = ubo.modelMat;
+		A[3] = glm::vec4(0, 0, 0, 1);
+		/*
 		A[0][3] = 0.0;
 		A[1][3] = 0.0;
 		A[2][3] = 0.0;
 		A[3][3] = 1.0;
-
+		*/
 		ubo.InvTransposeMat = glm::transpose(glm::inverse(A));			
 
 		void* data;
@@ -2053,6 +2152,21 @@ void VulkanApp::updateUniformBuffers()
 		vkMapMemory(device, postProcessStages[i]->material->uniformBufferMemory, 0, sizeof(UniformBufferObject), 0, &data);
 		memcpy(data, &offScreenUbo, sizeof(UniformBufferObject));
 		vkUnmapMemory(device, postProcessStages[i]->material->uniformBufferMemory);
+
+		BlurMaterial* isBlurMat = dynamic_cast<BlurMaterial*>(postProcessStages[i]->material);
+
+		if(isBlurMat != NULL)
+		{
+			BlurUniformBufferObject blurUbo;
+
+			blurUbo.widthGap = isBlurMat->extent.x * isBlurMat->widthScale;
+			blurUbo.heightGap = isBlurMat->extent.y * isBlurMat->heightScale;
+
+			void* data;
+			vkMapMemory(device, isBlurMat->blurUniformBufferMemory, 0, sizeof(BlurUniformBufferObject), 0, &data);
+			memcpy(data, &blurUbo, sizeof(BlurUniformBufferObject));
+			vkUnmapMemory(device, isBlurMat->blurUniformBufferMemory);
+		}
 	}
 
 	{
@@ -2139,6 +2253,9 @@ void VulkanApp::cleanUpSwapChain()
 
 	lightingMaterial->cleanPipeline();
 	hdrHighlightMaterial->cleanPipeline();
+	horizontalMaterial->cleanPipeline();
+	verticalMaterial->cleanPipeline();
+	lastPostProcessMaterial->cleanPipeline();
 
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
@@ -2184,6 +2301,9 @@ void VulkanApp::cleanUp()
 
 	delete lightingMaterial;
 	delete hdrHighlightMaterial;
+	delete horizontalMaterial;
+	delete verticalMaterial;
+	delete lastPostProcessMaterial;
 	delete frameBufferMaterial;
 
 

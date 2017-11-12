@@ -33,13 +33,17 @@ void Geo::createTBN()
 		glm::vec3 localPos[3];
 		glm::vec2 uv[3];
 
-		localPos[0] = vertices[3 * i].positions;
-		localPos[1] = vertices[3 * i + 1].positions;
-		localPos[2] = vertices[3 * i + 2].positions;
+		unsigned int index01 = indices[3 * i];
+		unsigned int index02 = indices[3 * i + 1];
+		unsigned int index03 = indices[3 * i + 2];
 
-		uv[0] = vertices[3 * i].texcoords;
-		uv[1] = vertices[3 * i + 1].texcoords;
-		uv[2] = vertices[3 * i + 2].texcoords;
+		localPos[0] = vertices[index01].positions;
+		localPos[1] = vertices[index02].positions;
+		localPos[2] = vertices[index03].positions;
+
+		uv[0] = vertices[index01].texcoords;
+		uv[1] = vertices[index02].texcoords;
+		uv[2] = vertices[index03].texcoords;
 
 
 
@@ -67,31 +71,30 @@ void Geo::createTBN()
 			tan = glm::normalize((UV2.y * Pos1 - UV1.y * Pos2) / dino);
 			bit = glm::normalize((Pos2 - UV2.x * tan) / UV2.y);
 			nor = glm::normalize(glm::cross(tan, bit));
+
+			// Calculate handedness
+			glm::vec3 fFaceNormal = glm::normalize(glm::cross(localPos[1] - localPos[0], localPos[2] - localPos[1]));
+
+			//U flip
+			if (glm::dot(nor, fFaceNormal) < 0.0f)
+			{
+				tan = -(tan);
+			}
 		}
 		else
 		{
-
 			tan = glm::vec3(1.0f, 0.0f, 0.0f);
 			bit = glm::vec3(0.0f, 1.0f, 0.0f);
 			nor = glm::vec3(0.0f, 0.0f, 1.0f);
-			//bit = glm::normalize(glm::cross(nor, tan));
-			//tan = glm::normalize(glm::cross(bit, nor));
 		}
 
-		// Calculate handedness
-		glm::vec3 fFaceNormal = glm::normalize(glm::cross(localPos[1] - localPos[0], localPos[2] - localPos[1]));
-
-		//U flip
-		if (glm::dot(nor, fFaceNormal) < 0.0f)
-		{
-			tan = -(tan);
-		}
+		
 
 		glm::vec3 Nor[3];
 
-		Nor[0] = vertices[3 * i].normals;
-		Nor[1] = vertices[3 * i + 1].normals;
-		Nor[2] = vertices[3 * i + 2].normals;
+		Nor[0] = vertices[index01].normals;
+		Nor[1] = vertices[index02].normals;
+		Nor[2] = vertices[index03].normals;
 
 		glm::vec3 Tan[3];
 
@@ -126,14 +129,27 @@ void Geo::createTBN()
 			Tan[2] = glm::normalize(glm::cross(BiTan[2], nor));
 		}
 
-		vertices[3 * i].tangents = Tan[0];
-		vertices[3 * i + 1].tangents = Tan[1];
-		vertices[3 * i + 2].tangents = Tan[2];
+		vertices[index01].tangents += Tan[0];
+		vertices[index02].tangents += Tan[1];
+		vertices[index03].tangents += Tan[2];
 
-		vertices[3 * i].bitangents = BiTan[0];
-		vertices[3 * i + 1].bitangents = BiTan[1];
-		vertices[3 * i + 2].bitangents = BiTan[2];
+		vertices[index01].bitangents += BiTan[0];
+		vertices[index02].bitangents += BiTan[1];
+		vertices[index03].bitangents += BiTan[2];
 	}
+
+	for (size_t i = 0; i < numVetices; i++)
+	{
+		vertices[i].tangents = normalize(vertices[i].tangents);
+		vertices[i].bitangents = normalize(vertices[i].bitangents);
+
+
+		glm::vec3 nor = vertices[i].normals;
+		vertices[i].bitangents = glm::normalize(glm::cross(nor, vertices[i].tangents));
+		vertices[i].tangents = glm::normalize(glm::cross(vertices[i].bitangents, nor));
+	}
+
+
 }
 
 void Geo::loadGeometryFromFile(std::string path)
@@ -170,12 +186,12 @@ void Geo::loadGeometryFromFile(std::string path)
 
 			for (unsigned int j = 0; j < uvs.size() / 2; j++)
 			{
-				Vuvs.push_back(glm::vec2(uvs[j * 2], 1.0 - uvs[j * 2 + 1]));
+				Vuvs.push_back(glm::vec2( glm::fract(uvs[j * 2]), 1.0 - glm::fract(uvs[j * 2 + 1])));
 			}
 
 
-			numVetices = (unsigned int)positions.size() / 3;
-			numTriangles = numVetices / 3;
+			numVetices = (unsigned int)Vpositions.size();
+			
 			for (unsigned int j = 0; j < numVetices; j++)
 			{
 				Vertex tempVertexInfo;
@@ -183,17 +199,23 @@ void Geo::loadGeometryFromFile(std::string path)
 				tempVertexInfo.colors = glm::vec3(1.0f);
 
 				if (normals.size() == 0)
-					tempVertexInfo.normals = glm::vec3(0.0f);
+					tempVertexInfo.normals = glm::vec3(0.0f, 0.0f, 1.0f);
 				else
 					tempVertexInfo.normals = Vnormals[j];
 				
 				if (uvs.size() == 0)
-					tempVertexInfo.texcoords = glm::vec2(0.0f, 0.0f);
+					tempVertexInfo.texcoords = glm::vec2(0.5f, 0.5f);
 				else
 					tempVertexInfo.texcoords = Vuvs[j];
 
+				tempVertexInfo.tangents = glm::vec3(0.0f);
+
+				tempVertexInfo.bitangents = glm::vec3(0.0f);
+
 				vertices.push_back(tempVertexInfo);
 			}
+
+			numTriangles = (unsigned int)indices.size() / 3;
 
 			return;
 		}

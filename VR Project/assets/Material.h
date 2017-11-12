@@ -32,12 +32,19 @@ struct UniformBufferObject
 	}
 };
 
+
+struct BlurUniformBufferObject
+{
+	float widthGap;
+	float heightGap;
+};
+
 class Material : public Asset
 {
 public:
 
 	Material();
-	~Material();
+	virtual ~Material();
 
 	void addTexture(Texture* texture);
 
@@ -77,6 +84,7 @@ public:
 		pDirectionLights = DirectionLights;
 	}
 	
+	void setScreenScale(glm::vec2 scale);
 
 	VkBuffer uniformBuffer;
 	VkDeviceMemory uniformBufferMemory;
@@ -100,6 +108,13 @@ public:
 	VkRenderPass renderPass;
 
 	std::vector<DirectionalLight>* pDirectionLights;
+
+
+	float widthScale;
+	float heightScale;
+
+	glm::vec2 extent;
+
 private:
 	
 };
@@ -184,11 +199,11 @@ public:
 
 	void setImageViews(VkImageView pImageView, VkImageView pDepthImageView)
 	{
-		ImageView = pImageView;
+		finalImageView = pImageView;
 		DepthImageView = pDepthImageView;
 	}
 
-	VkImageView ImageView;
+	VkImageView finalImageView;
 	VkImageView DepthImageView;
 
 private:
@@ -214,6 +229,87 @@ public:
 	}
 
 	VkImageView ImageViews;
+	VkImageView DepthImageView;
+
+private:
+
+};
+
+class BlurMaterial : public Material
+{
+public:
+
+	virtual ~BlurMaterial()
+	{
+		cleanUp();
+	}
+
+	virtual void createDescriptorSetLayout();
+	virtual void createDescriptorPool();
+	virtual void createDescriptorSet();
+
+	void updateDescriptorSet();
+
+	void createGraphicsPipeline(glm::vec2 Extent, glm::vec2 ScreenOffset);
+
+	void setImageViews(VkImageView pImageViews, VkImageView pDepthImageView)
+	{
+		ImageViews = pImageViews;
+		DepthImageView = pDepthImageView;
+	}
+
+	virtual void createUniformBuffer()
+	{
+		Material::createUniformBuffer();
+
+		createBuffer(sizeof(BlurUniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, blurUniformBuffer, blurUniformBufferMemory);
+	}
+
+	virtual void cleanUp()
+	{
+		//Material::cleanUp();
+
+		vkDestroyBuffer(device, blurUniformBuffer, nullptr);
+		vkFreeMemory(device, blurUniformBufferMemory, nullptr);
+	}
+
+	virtual void cleanPipeline()
+	{
+		Material::cleanPipeline();
+	}
+
+	VkImageView ImageViews;
+	VkImageView DepthImageView;
+
+	VkBuffer blurUniformBuffer;
+	VkDeviceMemory blurUniformBufferMemory;
+
+private:
+
+};
+
+
+class LastPostProcessgMaterial : public Material
+{
+public:
+
+	virtual void createDescriptorSetLayout();
+	virtual void createDescriptorPool();
+	virtual void createDescriptorSet();
+
+	void updateDescriptorSet();
+
+	void createGraphicsPipeline(glm::vec2 Extent, glm::vec2 ScreenOffset);
+
+	void setImageViews(VkImageView pImageView, VkImageView pBloomImageView, VkImageView pDepthImageView)
+	{
+		sceneImageView = pImageView;
+		bloomImageView = pBloomImageView;
+		DepthImageView = pDepthImageView;
+	}
+
+	VkImageView sceneImageView;
+	VkImageView bloomImageView;
 	VkImageView DepthImageView;
 
 private:

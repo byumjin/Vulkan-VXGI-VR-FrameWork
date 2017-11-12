@@ -1,49 +1,19 @@
-﻿  Performing Custom Build Tools
-  shaders\debug0.frag
-  Performing Custom Build Tools
-  shaders\debug1.frag
-  Performing Custom Build Tools
-  shaders\debug2.frag
-  Performing Custom Build Tools
-  shaders\debug3.frag
-  Performing Custom Build Tools
-  shaders\debug4.frag
-  Performing Custom Build Tools
-  shaders\debug5.frag
-  Performing Custom Build Tools
-  shaders\debug6.frag
-  Performing Custom Build Tools
-  shaders\postprocess.vert
-  Performing Custom Build Tools
-  shaders\HDRHighlight.frag
-  Performing Custom Build Tools
-  shaders\debug10.frag
-  Performing Custom Build Tools
-  shaders\debug11.frag
-  Performing Custom Build Tools
-  shaders\debug7.frag
-  Performing Custom Build Tools
-  shaders\debug8.frag
-  Performing Custom Build Tools
-  shaders\debug9.frag
-  Performing Custom Build Tools
-  shaders\scene.frag
-  Actor.cpp
+﻿  Actor.cpp
+  Camera.cpp
   Light.cpp
+  Object.cpp
   Asset.cpp
   AssetDatabase.cpp
-  Texture.cpp
-  Camera.cpp
   Geometry.cpp
   Material.cpp
-  Object.cpp
+  Texture.cpp
   PostProcess.cpp
   VulkanApp.cpp
   main.cpp
   Generating code
-  698 of 4213 functions (16.6%) were compiled, the rest were copied from previous compilation.
-    365 functions were new in current compilation
-    196 functions had inline decision re-evaluated but remain unchanged
+  116 of 4299 functions ( 2.7%) were compiled, the rest were copied from previous compilation.
+    10 functions were new in current compilation
+    46 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
-  VR Project.vcxproj -> C:\Users\Jin\Documents\Visual Studio 2015\Projects\VR Project\x64\Release\VR Project.exe
-  VR Project.vcxproj -> C:\Users\Jin\Documents\Visual Studio 2015\Projects\VR Project\x64\Release\VR Project.pdb (Full PDB)
+  VR Project.vcxproj -> C:\Users\Jin\Documents\GitHub\Vulkan-VR-FrameWork\x64\Release\VR Project.exe
+  VR Project.vcxproj -> C:\Users\Jin\Documents\GitHub\Vulkan-VR-FrameWork\x64\Release\VR Project.pdb (Full PDB)

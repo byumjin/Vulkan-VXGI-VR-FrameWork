@@ -22,7 +22,7 @@ public:
 		
 	}
 
-	void Initialize(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkSurfaceKHR surfaceParam, VkExtent2D* extent2DParami, int LayerCount);
+	void Initialize(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkSurfaceKHR surfaceParam, VkExtent2D* extent2DParami, int LayerCount, uint32_t miplevelParam, glm::vec2 Scales);
 
 	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
 
@@ -73,6 +73,8 @@ public:
 	VkImageView outputImageView;
 	VkDeviceMemory outputImageMemory;
 
+	uint32_t miplevel;
+
 	singleTriangular* offScreenPlane;
 
 
@@ -83,4 +85,7 @@ public:
 
 	VkSemaphore postProcessSemaphore;
 
+
+	float widthScale;
+	float heightScale;
 };

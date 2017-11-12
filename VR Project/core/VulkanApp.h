@@ -188,6 +188,9 @@ private:
 
 	HDRHighlightMaterial* hdrHighlightMaterial;
 
+	BlurMaterial *horizontalMaterial;
+	BlurMaterial *verticalMaterial;
+
 	singleTriangular* offScreenPlane;
 
 	singleTriangular* offScreenPlaneforPostProcess;
@@ -196,6 +199,7 @@ private:
 
 	std::vector<DebugDisplayMaterial*> debugDisplayMaterials;
 
+	LastPostProcessgMaterial* lastPostProcessMaterial;
 	FinalRenderingMaterial* frameBufferMaterial;
 
 	VkRenderPass deferredRenderPass;
@@ -229,7 +233,7 @@ private:
 
 	//for FrameRender
 	PostProcess* sceneStage;
-	PostProcess* lastPostProcess;
+	PostProcess* theLastPostProcess;
 	
 };
 

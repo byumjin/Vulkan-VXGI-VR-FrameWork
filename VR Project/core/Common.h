@@ -54,3 +54,5 @@ enum GBUFFER
 
 #define LEFT_EYE 0
 #define RIGHT_EYE 1
+
+#define DOWNSAMPLING_BLOOM 8.0f

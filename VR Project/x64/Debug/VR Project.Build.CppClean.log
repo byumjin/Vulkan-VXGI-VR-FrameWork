@@ -2,24 +2,86 @@ c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\deb
 c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vc140.idb
 c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\asset.obj
 c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\assetdatabase.obj
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\tiny_obj_loader.obj
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\camera.obj
 c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\geometry.obj
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\material.obj
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\object.obj
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\tiny_obj_loader.obj
 c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vulkanapp.obj
 c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\main.obj
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\object.obj
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\camera.obj
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\material.obj
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\shader.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\texture.obj
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\actor.obj
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\light.obj
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\postprocess.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vc140.pdb
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vc140.idb
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\actor.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\light.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\asset.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\assetdatabase.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\texture.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\camera.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\geometry.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\material.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\object.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\tiny_obj_loader.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\postprocess.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vulkanapp.obj
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\main.obj
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\lighting.vert.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug0.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug1.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug2.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug3.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug5.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug6.frag.spv
 c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\shader.vert.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug4.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\lighting.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\shader.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\postprocess.vert.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug10.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug11.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug7.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug8.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\debug9.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\scene.frag.spv
+c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\shaders\hdrhighlight.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\shader.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\shader.vert.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\lighting.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\lighting.vert.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug0.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug1.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug2.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug3.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug4.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug5.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug6.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\postprocess.vert.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug10.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug11.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug8.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug9.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\scene.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug.vert.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\debug7.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\horizontalblur.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\verticalblur.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\hdrhighlight.frag.spv
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\shaders\lastpostprocess.frag.spv
 c:\users\jin\documents\visual studio 2015\projects\vr project\x64\debug\vr project.ilk
 c:\users\jin\documents\visual studio 2015\projects\vr project\x64\debug\vr project.exe
 c:\users\jin\documents\visual studio 2015\projects\vr project\x64\debug\vr project.pdb
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\cl.command.1.tlog
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\cl.read.1.tlog
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\cl.write.1.tlog
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\custombuild.command.1.tlog
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\custombuild.read.1.tlog
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\custombuild.write.1.tlog
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\link.command.1.tlog
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\link.read.1.tlog
-c:\users\jin\documents\visual studio 2015\projects\vr project\vr project\x64\debug\vr project.tlog\link.write.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\x64\debug\vr project.ilk
+c:\users\jin\documents\github\vulkan-vr-framework\x64\debug\vr project.exe
+c:\users\jin\documents\github\vulkan-vr-framework\x64\debug\vr project.pdb
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\cl.command.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\cl.read.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\cl.write.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\custombuild.command.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\custombuild.read.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\custombuild.write.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\link.command.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\link.read.1.tlog
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\x64\debug\vr project.tlog\link.write.1.tlog

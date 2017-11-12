@@ -1,12 +1,18 @@
 #include "PostProcess.h"
 
-void PostProcess::Initialize(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkSurfaceKHR surfaceParam, VkExtent2D* extent2DParam, int LayerCountParam)
+void PostProcess::Initialize(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkSurfaceKHR surfaceParam, VkExtent2D* extent2DParam, int LayerCountParam, uint32_t miplevelParam, glm::vec2 Scales)
 {
 	device = deviceParam;
 	physicalDevice = physicalDeviceParam;
 	surface = surfaceParam;
 	pExtent2D = extent2DParam;
 	LayerCount = LayerCountParam;
+
+	miplevel = miplevelParam;
+
+	widthScale = 1.0f / Scales.x;
+	heightScale = 1.0f / Scales.y;
+
 }
 
 void PostProcess::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
@@ -14,10 +20,10 @@ void PostProcess::createImage(uint32_t width, uint32_t height, VkFormat format, 
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageInfo.extent.width = width;
-	imageInfo.extent.height = height;
+	imageInfo.extent.width = (uint32_t)(widthScale * pExtent2D->width);
+	imageInfo.extent.height = (uint32_t)(heightScale * pExtent2D->height);
 	imageInfo.extent.depth = 1;
-	imageInfo.mipLevels = 1;
+	imageInfo.mipLevels = miplevel;
 	imageInfo.arrayLayers = 1;
 	imageInfo.format = format;
 	imageInfo.tiling = tiling;
@@ -64,7 +70,7 @@ uint32_t PostProcess::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags 
 
 void PostProcess::createImages()
 {
-	createImage(pExtent2D->width, pExtent2D->height, format, tiling, usage, properties, outputImage, outputImageMemory);
+	createImage((uint32_t)(widthScale * pExtent2D->width), (uint32_t)(heightScale * pExtent2D->height), format, tiling, usage, properties, outputImage, outputImageMemory);
 	outputImageView = createImageView(outputImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
@@ -77,7 +83,7 @@ void PostProcess::createImages(VkFormat formatParam, VkImageTiling tilingParam, 
 	properties = propertiesParam;
 
 
-	createImage(pExtent2D->width, pExtent2D->height, format, tiling, usage, properties, outputImage, outputImageMemory);
+	createImage((uint32_t)(widthScale * pExtent2D->width), (uint32_t)(heightScale * pExtent2D->height), format, tiling, usage, properties, outputImage, outputImageMemory);
 	outputImageView = createImageView(outputImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
@@ -126,15 +132,6 @@ void PostProcess::createRenderPass()
 	subpass.pColorAttachments = &colorAttachmentRef;
 	subpass.pDepthStencilAttachment = NULL;
 
-	/*
-	VkSubpassDependency dependency = {};
-	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependency.dstSubpass = 0;
-	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.srcAccessMask = 0;
-	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	*/
 
 	std::array<VkSubpassDependency, 2> dependencies;
 
@@ -177,8 +174,8 @@ void PostProcess::createFramebuffer()
 	fbufCreateInfo.renderPass = renderPass;
 	fbufCreateInfo.pAttachments = &outputImageView;
 	fbufCreateInfo.attachmentCount = 1;
-	fbufCreateInfo.width = pExtent2D->width;
-	fbufCreateInfo.height = pExtent2D->height;
+	fbufCreateInfo.width = (uint32_t)(widthScale * pExtent2D->width);
+	fbufCreateInfo.height = (uint32_t)(heightScale * pExtent2D->height);
 	fbufCreateInfo.layers = LayerCount;
 
 	if (vkCreateFramebuffer(device, &fbufCreateInfo, nullptr, &frameBuffer) != VK_SUCCESS)
@@ -230,7 +227,13 @@ void PostProcess::createCommandBuffers()
 	renderPassInfo.renderPass = renderPass;
 	renderPassInfo.framebuffer = frameBuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = *pExtent2D;
+
+	VkExtent2D extent2D;
+	extent2D.width = (uint32_t)(widthScale * pExtent2D->width);
+	extent2D.height = (uint32_t)(heightScale * pExtent2D->height);
+
+	renderPassInfo.renderArea.extent = extent2D;
+
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
 

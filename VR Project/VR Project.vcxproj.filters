@@ -178,10 +178,17 @@
     <CustomBuild Include="shaders\scene.frag">
       <Filter>Shaders</Filter>
     </CustomBuild>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="shaders\debug.vert">
+    <CustomBuild Include="shaders\debug.vert">
       <Filter>Shaders</Filter>
-    </None>
+    </CustomBuild>
+    <CustomBuild Include="shaders\verticalBlur.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\horizontalBlur.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include="shaders\lastPostProcess.frag">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
