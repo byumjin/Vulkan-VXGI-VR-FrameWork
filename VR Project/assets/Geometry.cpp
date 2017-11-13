@@ -73,20 +73,38 @@ void Geo::createTBN()
 			nor = glm::normalize(glm::cross(tan, bit));
 
 			// Calculate handedness
-			glm::vec3 fFaceNormal = glm::normalize(glm::cross(localPos[1] - localPos[0], localPos[2] - localPos[1]));
+			
+			//glm::vec3 fFaceNormal = glm::normalize(glm::cross(localPos[1] - localPos[0], localPos[2] - localPos[1]));
+
+			glm::vec3 fFaceNormal = glm::normalize(glm::cross(Pos2, Pos1));
 
 			//U flip
 			if (glm::dot(nor, fFaceNormal) < 0.0f)
 			{
 				tan = -(tan);
+
+				vertices[index01].colors = glm::vec4(1.0, 0.0, 0.0, 0.0);
+				vertices[index02].colors = glm::vec4(1.0, 0.0, 0.0, 0.0);
+				vertices[index03].colors = glm::vec4(1.0, 0.0, 0.0, 0.0);
 			}
+
+			if (glm::dot(tan, bit) == 1.0f)
+			{
+				continue;
+			}
+			
+			
 		}
 		else
 		{
+			continue;
+
+			/*
 			tan = glm::vec3(1.0f, 0.0f, 0.0f);
 			bit = glm::vec3(0.0f, 1.0f, 0.0f);
-			nor = glm::vec3(0.0f, 0.0f, 1.0f);
-		}
+			//nor = glm::vec3(0.0f, 0.0f, 1.0f);
+			*/
+		}		
 
 		
 
@@ -111,6 +129,7 @@ void Geo::createTBN()
 		if (Nor[0] != glm::vec3(0.0f))
 		{
 			nor = Nor[0];
+
 			BiTan[0] = glm::normalize(glm::cross(nor, Tan[0]));
 			Tan[0] = glm::normalize(glm::cross(BiTan[0], nor));
 		}
@@ -133,6 +152,8 @@ void Geo::createTBN()
 		vertices[index02].tangents += Tan[1];
 		vertices[index03].tangents += Tan[2];
 
+		
+
 		vertices[index01].bitangents += BiTan[0];
 		vertices[index02].bitangents += BiTan[1];
 		vertices[index03].bitangents += BiTan[2];
@@ -140,16 +161,20 @@ void Geo::createTBN()
 
 	for (size_t i = 0; i < numVetices; i++)
 	{
+		if (glm::length(vertices[i].tangents) == 0.0f)
+			vertices[i].tangents = glm::vec3(1.0, 0.0, 0.0);
+
+		if (glm::dot(vertices[i].normals, glm::vec3(1.0, 0.0, 0.0)) == 1.0f && glm::dot(vertices[i].normals, vertices[i].tangents) > 0.9999f)
+			vertices[i].tangents = glm::vec3(0.0, 1.0, 0.0);
+
+
 		vertices[i].tangents = normalize(vertices[i].tangents);
 		vertices[i].bitangents = normalize(vertices[i].bitangents);
-
 
 		glm::vec3 nor = vertices[i].normals;
 		vertices[i].bitangents = glm::normalize(glm::cross(nor, vertices[i].tangents));
 		vertices[i].tangents = glm::normalize(glm::cross(vertices[i].bitangents, nor));
 	}
-
-
 }
 
 void Geo::loadGeometryFromFile(std::string path)
@@ -196,7 +221,7 @@ void Geo::loadGeometryFromFile(std::string path)
 			{
 				Vertex tempVertexInfo;
 				tempVertexInfo.positions = Vpositions[j];
-				tempVertexInfo.colors = glm::vec3(1.0f);
+				tempVertexInfo.colors = glm::vec3(0.0f);
 
 				if (normals.size() == 0)
 					tempVertexInfo.normals = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -208,9 +233,12 @@ void Geo::loadGeometryFromFile(std::string path)
 				else
 					tempVertexInfo.texcoords = Vuvs[j];
 
-				tempVertexInfo.tangents = glm::vec3(0.0f);
+				if (glm::dot(tempVertexInfo.normals, tempVertexInfo.tangents) > 0.9999f)
+					tempVertexInfo.tangents = glm::vec3(0.0f, 1.0f, 0.0f);
+				else
+					tempVertexInfo.tangents = glm::vec3(1.0f, 0.0f, 0.0f);
 
-				tempVertexInfo.bitangents = glm::vec3(0.0f);
+				tempVertexInfo.bitangents = glm::vec3(0.0f, 1.0f, 0.0f);
 
 				vertices.push_back(tempVertexInfo);
 			}

@@ -38,9 +38,9 @@ void main() {
 
     fragColor = vertexCol;
 
-	fragTangent = vertexTan;
-	fragBiTangent = vertexBitan;
-	fragNormal = vertexNor;
+	fragTangent = normalize(vertexTan);
+	fragBiTangent = normalize(vertexBitan);
+	fragNormal = normalize(vertexNor);
 
 	fragUV = vertexUV;
 }

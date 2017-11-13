@@ -140,7 +140,7 @@ void VulkanApp::initVulkan()
 	createGbuffers();
 	createSceneBuffer();
 
-	camera.setCamera(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f, (float)WIDTH, (float)HEIGHT, NEAR_PLANE, FAR_PLANE);
+	camera.setCamera(glm::vec3(0.0f, 3.0f, 15.0f), glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f, (float)WIDTH, (float)HEIGHT, NEAR_PLANE, FAR_PLANE);
 	
 	//03. Create CommandPool
 	//[Stage] PreDraw 
@@ -159,7 +159,7 @@ void VulkanApp::initVulkan()
 	
 	PostProcess* HDRHighlightPostProcess = new PostProcess;
 
-	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 6, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 8, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
 	HDRHighlightPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	HDRHighlightPostProcess->createCommandPool();	
 	
@@ -200,7 +200,7 @@ void VulkanApp::initVulkan()
 	DirectionalLight DL01;
 	DL01.lightInfo.lightColor = glm::vec4(1.0, 1.0, 1.0, 2.0);
 	DL01.lightInfo.lightPosition = glm::vec4(0.0);
-	DL01.lightDirection = glm::normalize(glm::vec3(0.2f, 2.0f, 1.0f));
+	DL01.lightDirection = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f));
 	directionLights.push_back(DL01);
 
 
@@ -1142,28 +1142,30 @@ void VulkanApp::reCreateSwapChain()
 	lightingMaterial->connectRenderPass(sceneStage->renderPass);
 	lightingMaterial->createGraphicsPipeline(swapChainExtent);
 
-	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
-	{
-		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[3]->outputImageView);
-		debugDisplayMaterials[i]->updateDescriptorSet();
-		debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);		
-	}
-	
-	float debugWidth = swapChainExtent.width * 0.25f;
-	float debugHeight = swapChainExtent.height * 0.25f;
 
-	debugDisplayMaterials[0]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, 0.0));
-	debugDisplayMaterials[1]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth, 0.0));
-	debugDisplayMaterials[2]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 2.0, 0.0));
-	debugDisplayMaterials[3]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, 0.0));
-	debugDisplayMaterials[4]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, debugHeight));
-	debugDisplayMaterials[5]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, debugHeight * 2.0));
-	debugDisplayMaterials[6]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight));
-	debugDisplayMaterials[7]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight * 2.0));
-	debugDisplayMaterials[8]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, debugHeight * 3.0));
-	debugDisplayMaterials[9]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth, debugHeight * 3.0));
-	debugDisplayMaterials[10]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 2.0, debugHeight * 3.0));
-	debugDisplayMaterials[11]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight * 3.0));
+		for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
+		{
+			debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[3]->outputImageView);
+			debugDisplayMaterials[i]->updateDescriptorSet();
+			debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);
+		}
+
+		float debugWidth = swapChainExtent.width * 0.25f;
+		float debugHeight = swapChainExtent.height * 0.25f;
+
+		debugDisplayMaterials[0]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, 0.0));
+		debugDisplayMaterials[1]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth, 0.0));
+		debugDisplayMaterials[2]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 2.0, 0.0));
+		debugDisplayMaterials[3]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, 0.0));
+		debugDisplayMaterials[4]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, debugHeight));
+		debugDisplayMaterials[5]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, debugHeight * 2.0));
+		debugDisplayMaterials[6]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight));
+		debugDisplayMaterials[7]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight * 2.0));
+		debugDisplayMaterials[8]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, debugHeight * 3.0));
+		debugDisplayMaterials[9]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth, debugHeight * 3.0));
+		debugDisplayMaterials[10]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 2.0, debugHeight * 3.0));
+		debugDisplayMaterials[11]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 3.0, debugHeight * 3.0));
+	
 
 	
 	//[postProcess]
@@ -2110,26 +2112,29 @@ void VulkanApp::updateUniformBuffers()
 		vkUnmapMemory(device, lightingMaterial->directionalLightBufferMemory);
 	}
 	
+	if (bDeubDisply)
 	{
-		UniformBufferObject debugDisplayUbo = {};
-
-		debugDisplayUbo.modelMat = glm::mat4(1.0);
-		debugDisplayUbo.viewMat = camera.viewMat;
-		debugDisplayUbo.projMat = camera.projMat;
-		debugDisplayUbo.viewProjMat = camera.viewProjMat;
-		debugDisplayUbo.InvViewProjMat = camera.InvViewProjMat;
-		debugDisplayUbo.modelViewProjMat = debugDisplayUbo.viewProjMat;
-		debugDisplayUbo.InvTransposeMat = debugDisplayUbo.modelMat;
-		debugDisplayUbo.cameraWorldPos = camera.position;
-
-		debugDisplayPlane->updateVertexBuffer(debugDisplayUbo.InvViewProjMat);
-
-		for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 		{
-			void* data;
-			vkMapMemory(device, debugDisplayMaterials[i]->uniformBufferMemory, 0, sizeof(UniformBufferObject), 0, &data);
-			memcpy(data, &debugDisplayUbo, sizeof(UniformBufferObject));
-			vkUnmapMemory(device, debugDisplayMaterials[i]->uniformBufferMemory);
+			UniformBufferObject debugDisplayUbo = {};
+
+			debugDisplayUbo.modelMat = glm::mat4(1.0);
+			debugDisplayUbo.viewMat = camera.viewMat;
+			debugDisplayUbo.projMat = camera.projMat;
+			debugDisplayUbo.viewProjMat = camera.viewProjMat;
+			debugDisplayUbo.InvViewProjMat = camera.InvViewProjMat;
+			debugDisplayUbo.modelViewProjMat = debugDisplayUbo.viewProjMat;
+			debugDisplayUbo.InvTransposeMat = debugDisplayUbo.modelMat;
+			debugDisplayUbo.cameraWorldPos = camera.position;
+
+			debugDisplayPlane->updateVertexBuffer(debugDisplayUbo.InvViewProjMat);
+
+			for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
+			{
+				void* data;
+				vkMapMemory(device, debugDisplayMaterials[i]->uniformBufferMemory, 0, sizeof(UniformBufferObject), 0, &data);
+				memcpy(data, &debugDisplayUbo, sizeof(UniformBufferObject));
+				vkUnmapMemory(device, debugDisplayMaterials[i]->uniformBufferMemory);
+			}
 		}
 	}
 
@@ -2260,9 +2265,7 @@ void VulkanApp::cleanUpSwapChain()
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
 		debugDisplayMaterials[i]->cleanPipeline();
-	}
-
-	
+	}	
 
 	frameBufferMaterial->cleanPipeline();
 	
@@ -2279,9 +2282,6 @@ void VulkanApp::cleanUpSwapChain()
 
 		vkDestroyRenderPass(device, thisPostProcess->renderPass, nullptr);
 	}
-
-	//vkDestroyRenderPass(device, sceneStage->renderPass, nullptr);
-
 
 	vkDestroyRenderPass(device, frameBufferRenderPass, nullptr);
 

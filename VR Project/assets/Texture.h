@@ -7,7 +7,7 @@
 class Texture : public Asset
 {
 public:
-	Texture()
+	Texture():mipLevel(0)
 	{
 
 	}
@@ -20,6 +20,11 @@ public:
 	void LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam);
 	void createTextureImage(std::string path);
 
+	void setMiplevel(int mipLevelParam)
+	{
+		mipLevel = mipLevelParam;
+	}
+
 	VkImageView createImageView(VkImage image, VkFormat format);
 	void createTextureImageView(VkFormat format);
 
@@ -29,7 +34,8 @@ public:
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 	
-	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);	
+	void createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory,
+		int mipLevelParam);
 
 	void createTextureSampler();
 
@@ -37,6 +43,8 @@ public:
 
 	VkImageView textureImageView;
 	VkSampler textureSampler;
+
+	int mipLevel;
 
 private:
 
