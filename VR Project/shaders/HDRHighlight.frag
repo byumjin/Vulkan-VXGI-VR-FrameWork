@@ -31,7 +31,6 @@ int level = 0;
 void main() {
 
 	//extract HDR color
-	outColor = max(vec4(0.0), min(textureLod(sceneMap, fragUV, level) + uBias, vec4(10.0))) * uScale;
-	//outColor = texture(sceneMap, fragUV);
+	outColor = max(vec4(0.0), min(textureLod(sceneMap, fragUV, level) + uBias, vec4(10.0))) * uScale;	
 	
 }

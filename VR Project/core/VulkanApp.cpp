@@ -109,11 +109,9 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 		{
 			bVRmode = !bVRmode;
 
-			camera.vr_mode = bVRmode;
+			camera.vrMode = bVRmode;
 
 			VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
-
-			//camera.UpdateAspectRatio(float(width) / float(height));
 
 			app->reCreateSwapChain();
 		}
@@ -135,9 +133,13 @@ void VulkanApp::initWindow()
 {
 	glfwInit();
 
+	primaryMonitor = glfwGetPrimaryMonitor();
+
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
+
+	//window = glfwCreateWindow(1920, 1080, "VR Project", primaryMonitor, nullptr);
 	window = glfwCreateWindow(WIDTH, HEIGHT, "VR Project", nullptr, nullptr);
 
 	glfwSetWindowUserPointer(window, this);
@@ -381,6 +383,9 @@ void VulkanApp::initVulkan()
 	
 	Object obj01;
 	obj01.initiation("Johanna", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Johanna.obj"));
+	obj01.scale = glm::vec3(0.8f);
+	obj01.position = glm::vec3(0.0, 1.0, -2.0);
+	obj01.update();
 	obj01.connectMaterial(pMat);
 	objectManager.push_back(obj01);
 	
@@ -388,7 +393,7 @@ void VulkanApp::initVulkan()
 	Object obj02;
 	obj02.initiation("Chromie", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Chromie.obj"));
 	obj02.scale = glm::vec3(0.2f);
-	obj02.position = glm::vec3(0.0, 0.0, 4.0);
+	obj02.position = glm::vec3(0.0, 1.0, 2.0);
 	obj02.update();
 	obj02.connectMaterial(pMat2);
 	objectManager.push_back(obj02);
@@ -397,6 +402,7 @@ void VulkanApp::initVulkan()
 	Object obj03;
 	obj03.initiation("Cerberus", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Cerberus/Cerberus.obj"));
 	obj03.scale = glm::vec3(10.0f);
+	obj03.position = glm::vec3(0.0, -1.0, 0.0);
 	obj03.update();
 	obj03.connectMaterial(pMat3);
 	objectManager.push_back(obj03);
@@ -1124,7 +1130,7 @@ void VulkanApp::reCreateSwapChain()
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
 		PostProcess* thisPostProcess = postProcessStages[i];	
-		thisPostProcess->vr_mode = bVRmode;
+		thisPostProcess->vrMode = bVRmode;
 		thisPostProcess->createImages();
 	}
 	
@@ -1155,7 +1161,7 @@ void VulkanApp::reCreateSwapChain()
 
 		if (tempObjectDrawMaterial != NULL)
 		{
-			materialManager[i]->vr_mode = bVRmode;
+			materialManager[i]->vrMode = bVRmode;
 			materialManager[i]->connectRenderPass(deferredRenderPass);
 			materialManager[i]->createGraphicsPipeline(swapChainExtent);
 
@@ -1163,7 +1169,7 @@ void VulkanApp::reCreateSwapChain()
 		}
 	}
 	
-	lightingMaterial->vr_mode = bVRmode;
+	lightingMaterial->vrMode = bVRmode;
 	lightingMaterial->setGbuffers(&gBufferImageViews, depthImageView);
 	lightingMaterial->updateDescriptorSet();
 	lightingMaterial->connectRenderPass(sceneStage->renderPass);
@@ -1172,7 +1178,7 @@ void VulkanApp::reCreateSwapChain()
 
 		for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 		{
-			debugDisplayMaterials[i]->vr_mode = bVRmode;
+			debugDisplayMaterials[i]->vrMode = bVRmode;
 			debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[3]->outputImageView);
 			debugDisplayMaterials[i]->updateDescriptorSet();
 			debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);
@@ -1200,31 +1206,31 @@ void VulkanApp::reCreateSwapChain()
 
 	
 	//[postProcess]
-	hdrHighlightMaterial->vr_mode = bVRmode;
+	hdrHighlightMaterial->vrMode = bVRmode;
 	hdrHighlightMaterial->setImageViews(sceneStage->outputImageView, depthImageView);
 	hdrHighlightMaterial->updateDescriptorSet();
 	hdrHighlightMaterial->connectRenderPass(postProcessStages[1]->renderPass);
 	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[1]->pExtent2D->width, postProcessStages[1]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	horizontalMaterial->vr_mode = bVRmode;
+	horizontalMaterial->vrMode = bVRmode;
 	horizontalMaterial->setImageViews(postProcessStages[1]->outputImageView, depthImageView);
 	horizontalMaterial->updateDescriptorSet();
 	horizontalMaterial->connectRenderPass(postProcessStages[2]->renderPass);
 	horizontalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[2]->pExtent2D->width, postProcessStages[2]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	verticalMaterial->vr_mode = bVRmode;
+	verticalMaterial->vrMode = bVRmode;
 	verticalMaterial->setImageViews(postProcessStages[2]->outputImageView, depthImageView);
 	verticalMaterial->updateDescriptorSet();
 	verticalMaterial->connectRenderPass(postProcessStages[3]->renderPass);
 	verticalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[3]->pExtent2D->width, postProcessStages[3]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	lastPostProcessMaterial->vr_mode = bVRmode;
+	lastPostProcessMaterial->vrMode = bVRmode;
 	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, postProcessStages[3]->outputImageView, depthImageView);
 	lastPostProcessMaterial->updateDescriptorSet();
 	lastPostProcessMaterial->connectRenderPass(postProcessStages[4]->renderPass);
 	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[4]->pExtent2D->width, postProcessStages[4]->pExtent2D->height), glm::vec2(0.0, 0.0));
 	
-	frameBufferMaterial->vr_mode = bVRmode;
+	frameBufferMaterial->vrMode = bVRmode;
 	frameBufferMaterial->setImageViews(theLastPostProcess->outputImageView, depthImageView);
 	frameBufferMaterial->updateDescriptorSet();
 	frameBufferMaterial->connectRenderPass(frameBufferRenderPass);
@@ -2311,7 +2317,7 @@ void VulkanApp::updateUniformBuffers(unsigned int EYE, float time)
 	if (bVRmode)
 	{
 		ubo.viewMat = camera.viewMatforVR[EYE];
-		ubo.projMat = camera.projMat;
+		ubo.projMat = camera.projMatforVR;
 		ubo.viewProjMat = camera.viewProjMatforVR[EYE];
 		ubo.InvViewProjMat = camera.InvViewProjMatforVR[EYE];
 		ubo.modelViewProjMat = ubo.viewProjMat;

@@ -59,17 +59,16 @@ void Camera::UpdateAspectRatio(float aspectRatio)
 	viewProjMat = projMat * viewMat;
 	InvViewProjMat = glm::inverse(viewProjMat);
 
-	//if (vr_mode)
-	//{
-		projMatforVR = glm::perspective(glm::radians(fovY), aspectRatio*0.5f, nearPlane, farPlane);
-		projMatforVR[1][1] *= -1;
+	
+	projMatforVR = glm::perspective(glm::radians(fovY), aspectRatio*0.5f, nearPlane, farPlane);
+	projMatforVR[1][1] *= -1;
 
-		viewProjMatforVR[LEFT_EYE] = projMatforVR * viewMatforVR[LEFT_EYE];
-		viewProjMatforVR[RIGHT_EYE] = projMatforVR * viewMatforVR[RIGHT_EYE];
+	viewProjMatforVR[LEFT_EYE] = projMatforVR * viewMatforVR[LEFT_EYE];
+	viewProjMatforVR[RIGHT_EYE] = projMatforVR * viewMatforVR[RIGHT_EYE];
 
-		InvViewProjMatforVR[LEFT_EYE] = glm::inverse(viewProjMatforVR[LEFT_EYE]);
-		InvViewProjMatforVR[RIGHT_EYE] = glm::inverse(viewProjMatforVR[RIGHT_EYE]);
-	//}
+	InvViewProjMatforVR[LEFT_EYE] = glm::inverse(viewProjMatforVR[LEFT_EYE]);
+	InvViewProjMatforVR[RIGHT_EYE] = glm::inverse(viewProjMatforVR[RIGHT_EYE]);
+	
 	
 }
 
@@ -83,26 +82,28 @@ void Camera::UpdateOrbit(float deltaX, float deltaY, float deltaZ)
 	viewProjMat = projMat * viewMat;
 	InvViewProjMat = glm::inverse(viewProjMat);
 
-	//if (vr_mode)
-	//{
+	
 		glm::vec3 rightVec = glm::normalize(glm::cross(lookVector, upVector));
 
-		positionforVR[LEFT_EYE] = position - glm::length(IPD) * rightVec*0.5f;
-		positionforVR[RIGHT_EYE] = position + glm::length(IPD) * rightVec*0.5f;
+		positionforVR[LEFT_EYE] = glm::vec3(viewMat[3]) - glm::length(IPD) * rightVec*0.5f;
+		positionforVR[RIGHT_EYE] = glm::vec3(viewMat[3]) + glm::length(IPD) * rightVec*0.5f;
 
 		glm::mat4 tempMat = viewMat;
-		tempMat[3] = glm::vec4(positionforVR[RIGHT_EYE], 1.0f);
-		viewMatforVR[LEFT_EYE] = glm::inverse(tempMat);// glm::lookAt(positionforVR[LEFT_EYE], lookVector, upVector);
 		tempMat[3] = glm::vec4(positionforVR[LEFT_EYE], 1.0f);
-		viewMatforVR[RIGHT_EYE] = glm::inverse(tempMat);// glm::lookAt(positionforVR[RIGHT_EYE], lookVector, upVector);
-		
+		viewMatforVR[LEFT_EYE] = tempMat;
+		tempMat[3] = glm::vec4(positionforVR[RIGHT_EYE], 1.0f);
+		viewMatforVR[RIGHT_EYE] = tempMat;
+
+		///????
+		positionforVR[RIGHT_EYE] = position - glm::length(IPD) * rightVec*0.5f;
+		positionforVR[LEFT_EYE] = position + glm::length(IPD) * rightVec*0.5f;
 
 		viewProjMatforVR[LEFT_EYE] = projMatforVR * viewMatforVR[LEFT_EYE];
 		viewProjMatforVR[RIGHT_EYE] = projMatforVR * viewMatforVR[RIGHT_EYE];
 
 		InvViewProjMatforVR[LEFT_EYE] = glm::inverse(viewProjMatforVR[LEFT_EYE]);
 		InvViewProjMatforVR[RIGHT_EYE] = glm::inverse(viewProjMatforVR[RIGHT_EYE]);
-	//}
+	
 }
 
 void Camera::UpdatePosition(float deltaX, float deltaY, float deltaZ)
@@ -115,23 +116,26 @@ void Camera::UpdatePosition(float deltaX, float deltaY, float deltaZ)
 	viewProjMat = projMat * viewMat;
 	InvViewProjMat = glm::inverse(viewProjMat);
 
-	//if (vr_mode)
-	//{
+	
 		glm::vec3 rightVec = glm::normalize(glm::cross(lookVector, upVector));
 
-		positionforVR[LEFT_EYE] = position - glm::length(IPD) * rightVec*0.5f;
-		positionforVR[RIGHT_EYE] = position + glm::length(IPD) * rightVec*0.5f;
+		positionforVR[LEFT_EYE] = glm::vec3(viewMat[3]) - glm::length(IPD) * rightVec*0.5f;
+		positionforVR[RIGHT_EYE] = glm::vec3(viewMat[3]) + glm::length(IPD) * rightVec*0.5f;
 
 		glm::mat4 tempMat = viewMat;
-		tempMat[3] = glm::vec4(positionforVR[RIGHT_EYE], 1.0f);
-		viewMatforVR[LEFT_EYE] = glm::inverse(tempMat);// glm::lookAt(positionforVR[LEFT_EYE], lookVector, upVector);
 		tempMat[3] = glm::vec4(positionforVR[LEFT_EYE], 1.0f);
-		viewMatforVR[RIGHT_EYE] = glm::inverse(tempMat);// glm::lookAt(positionforVR[RIGHT_EYE], lookVector, upVector);
+		viewMatforVR[LEFT_EYE] = tempMat;
+		tempMat[3] = glm::vec4(positionforVR[RIGHT_EYE], 1.0f);
+		viewMatforVR[RIGHT_EYE] = tempMat;
+
+		///????
+		positionforVR[RIGHT_EYE] = position - glm::length(IPD) * rightVec*0.5f;
+		positionforVR[LEFT_EYE] = position + glm::length(IPD) * rightVec*0.5f;
 
 		viewProjMatforVR[LEFT_EYE] = projMatforVR * viewMatforVR[LEFT_EYE];
 		viewProjMatforVR[RIGHT_EYE] = projMatforVR * viewMatforVR[RIGHT_EYE];
 
 		InvViewProjMatforVR[LEFT_EYE] = glm::inverse(viewProjMatforVR[LEFT_EYE]);
 		InvViewProjMatforVR[RIGHT_EYE] = glm::inverse(viewProjMatforVR[RIGHT_EYE]);
-	//}
+	
 }

@@ -117,7 +117,7 @@ public:
 
 	glm::vec2 extent;
 
-	bool vr_mode;
+	bool vrMode;
 private:
 	
 };

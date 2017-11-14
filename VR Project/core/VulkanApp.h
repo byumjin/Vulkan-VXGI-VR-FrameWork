@@ -144,6 +144,7 @@ public:
 
 private:	
 	GLFWwindow* window;
+	GLFWmonitor* primaryMonitor;
 
 	VkInstance instance;
 	VkDebugReportCallbackEXT callback;

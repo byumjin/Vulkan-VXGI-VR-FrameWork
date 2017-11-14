@@ -28,5 +28,6 @@ layout(location = 0) out vec4 outColor;
 
 void main()
 {  
+	//temp UV
     outColor = vec4(texture(basicColorMap, fragUV).w, texture(emissiveMap, fragUV).w, 0.0, 1.0);
 }

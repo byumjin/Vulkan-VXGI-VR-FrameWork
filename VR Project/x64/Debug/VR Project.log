@@ -1,3 +1,63 @@
-﻿  Material.cpp
+﻿  Performing Custom Build Tools
+  shaders\shader.frag
+  Performing Custom Build Tools
+  shaders\shader.vert
+  Performing Custom Build Tools
+  shaders\lighting.frag
+  Performing Custom Build Tools
+  shaders\lighting.vert
+  Performing Custom Build Tools
+  shaders\debug0.frag
+  Performing Custom Build Tools
+  shaders\debug1.frag
+  Performing Custom Build Tools
+  shaders\debug2.frag
+  Performing Custom Build Tools
+  shaders\debug3.frag
+  Performing Custom Build Tools
+  shaders\debug4.frag
+  Performing Custom Build Tools
+  shaders\debug5.frag
+  Performing Custom Build Tools
+  shaders\debug6.frag
+  Performing Custom Build Tools
+  shaders\postprocess.vert
+  Performing Custom Build Tools
+  shaders\HDRHighlight.frag
+  Performing Custom Build Tools
+  shaders\debug10.frag
+  Performing Custom Build Tools
+  shaders\debug11.frag
+  Performing Custom Build Tools
+  shaders\debug7.frag
+  Performing Custom Build Tools
+  shaders\debug8.frag
+  Performing Custom Build Tools
+  shaders\debug9.frag
+  Performing Custom Build Tools
+  shaders\scene.frag
+  Performing Custom Build Tools
+  shaders\debug.vert
+  Performing Custom Build Tools
+  shaders\horizontalBlur.frag
+  Performing Custom Build Tools
+  shaders\verticalBlur.frag
+  Performing Custom Build Tools
+  shaders\lastPostProcess.frag
+  main.cpp
+  VulkanApp.cpp
+  PostProcess.cpp
+  tiny_obj_loader.cc
+  Object.cpp
+  Material.cpp
+  Geometry.cpp
+  Camera.cpp
+  Texture.cpp
+  AssetDatabase.cpp
+  Asset.cpp
+  Light.cpp
+  Actor.cpp
+  Generating Code...
+LINK : warning LNK4098: defaultlib 'MSVCRT' conflicts with use of other libs; use /NODEFAULTLIB:library
   VR Project.vcxproj -> C:\Users\Jin\Documents\GitHub\Vulkan-VR-FrameWork\x64\Debug\VR Project.exe
   VR Project.vcxproj -> C:\Users\Jin\Documents\GitHub\Vulkan-VR-FrameWork\x64\Debug\VR Project.pdb (Full PDB)

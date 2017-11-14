@@ -136,7 +136,7 @@ void ObjectDrawMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 	viewport.y = 0.0f;
 
 	
-	if (vr_mode)
+	if (vrMode)
 	{
 		viewport.width = (float)swapChainExtent.width * 0.5f;
 	}
@@ -153,7 +153,7 @@ void ObjectDrawMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 	scissor.offset = { 0, 0 };
 
 	
-	if (vr_mode)
+	if (vrMode)
 	{
 		VkExtent2D vrExtent = swapChainExtent;
 		vrExtent.width /= 2;
@@ -842,7 +842,7 @@ void LightingMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 	viewport.y = 0.0f;
 
 	/*
-	if (vr_mode)
+	if (vrMode)
 	{
 		viewport.width = (float)swapChainExtent.width * 0.5f;
 	}
@@ -861,7 +861,7 @@ void LightingMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 	scissor.offset = { 0, 0 };
 
 	/*
-	if (vr_mode)
+	if (vrMode)
 	{
 		VkExtent2D vrExtent = swapChainExtent;
 		vrExtent.width /= 2;
@@ -1979,7 +1979,7 @@ void FinalRenderingMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 
 	viewport.y = ScreenOffset.y;
 	
 	
-	if (vr_mode)
+	if (vrMode)
 	{
 		viewport.width = (float)extent.x * widthScale * 0.5f;
 	}
@@ -2399,7 +2399,7 @@ void HDRHighlightMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 Sc
 	viewport.y = ScreenOffset.y;
 
 	/*
-	if (vr_mode)
+	if (vrMode)
 	{
 		viewport.width = (float)extent.x * widthScale * 0.5f;
 	}
@@ -2790,7 +2790,7 @@ void BlurMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 ScreenOffs
 	viewport.width = (float)extent.x * widthScale;
 
 	/*
-	if (vr_mode)
+	if (vrMode)
 	{
 		viewport.width = (float)extent.x * widthScale * 0.5f;
 	}
@@ -3219,7 +3219,7 @@ void LastPostProcessgMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec
 	viewport.width = (float)extent.x * widthScale;
 
 	/*
-	if (vr_mode)
+	if (vrMode)
 	{
 		viewport.width = (float)extent.x * widthScale;// *0.5f;
 	}

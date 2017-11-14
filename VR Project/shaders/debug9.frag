@@ -28,5 +28,5 @@ layout(location = 0) out vec4 outColor;
 
 void main()
 {  
-    outColor = vec4(texture(normalColorMap, fragUV).w);
+    outColor = vec4(ubo.cameraWorldPos, 0.0);
 }

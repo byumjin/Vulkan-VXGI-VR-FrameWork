@@ -47,7 +47,7 @@ public:
 	std::vector<glm::vec3> positionforVR;
 
 
-	bool vr_mode;
+	bool vrMode;
 
 private:
 

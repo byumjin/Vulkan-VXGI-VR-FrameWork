@@ -70,7 +70,7 @@ uint32_t PostProcess::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags 
 
 void PostProcess::createImages()
 {
-	if (vr_mode)
+	if (vrMode)
 	{
 		createImage((uint32_t)(widthScale * pExtent2D->width * 0.5f), (uint32_t)(heightScale * pExtent2D->height), format, tiling, usage, properties, outputImage, outputImageMemory);
 		outputImageView = createImageView(outputImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -186,7 +186,7 @@ void PostProcess::createFramebuffer()
 	fbufCreateInfo.attachmentCount = 1;
 
 	/*
-	if (vr_mode)
+	if (vrMode)
 	{
 		fbufCreateInfo.width = (uint32_t)(widthScale * pExtent2D->width * 0.5f);
 	}
@@ -252,7 +252,7 @@ void PostProcess::createCommandBuffers()
 
 	VkExtent2D extent2D;
 	/*
-	if (vr_mode)
+	if (vrMode)
 	{
 		extent2D.width = (uint32_t)(widthScale * pExtent2D->width* 0.5f);
 	}
