@@ -72,6 +72,9 @@ void Material::createGraphicsPipeline(VkExtent2D swapChainExtent)
 void Material::cleanPipeline()
 {
 	vkDestroyPipeline(device, pipeline, nullptr);
+	vkDestroyPipeline(device, pipeline2, nullptr);
+	
+
 	vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
 }
 
@@ -291,6 +294,39 @@ void ObjectDrawMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
 	}
+
+	/*
+	//2nd Eye
+	viewport.x = viewport.width;
+	scissor.offset.x = (int32_t)viewport.x;
+
+	VkPipelineViewportStateCreateInfo viewportState2 = {};
+	viewportState2.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState2.viewportCount = 1;
+	viewportState2.pViewports = &viewport;
+	viewportState2.scissorCount = 1;
+	viewportState2.pScissors = &scissor;
+	
+	VkGraphicsPipelineCreateInfo pipelineInfo2 = {};
+	pipelineInfo2.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo2.stageCount = 2;
+	pipelineInfo2.pStages = shaderStages;
+	pipelineInfo2.pVertexInputState = &vertexInputInfo;
+	pipelineInfo2.pInputAssemblyState = &inputAssembly;
+	pipelineInfo2.pViewportState = &viewportState2;
+	pipelineInfo2.pRasterizationState = &rasterizer;
+	pipelineInfo2.pMultisampleState = &multisampling;
+	pipelineInfo2.pColorBlendState = &colorBlending;
+	pipelineInfo2.layout = pipelineLayout;
+	pipelineInfo2.renderPass = renderPass;
+	pipelineInfo2.subpass = 0;
+	pipelineInfo2.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo2.pDepthStencilState = &depthStencil;
+
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo2, nullptr, &pipeline2) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create graphics pipeline2!");
+	}
+	*/
 
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
 	vkDestroyShaderModule(device, vertShaderModule, nullptr);
@@ -1389,41 +1425,20 @@ void DebugDisplayMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 Sc
 	viewport.x = ScreenOffset.x;
 	viewport.y = ScreenOffset.y;
 
-	/*
-	if (vr_mode)
-	{
-		viewport.width = (float)Extent.x * widthScale * 0.5f;
-	}
-	else
-	{
-		viewport.width = (float)Extent.x * widthScale;
-	}
-	*/
-
-	viewport.width = (float)Extent.x * widthScale;
-	viewport.height = Extent.y * heightScale;
+	viewport.width = (float)extent.x * widthScale;
+	viewport.height = extent.y * heightScale;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
 
-	/*
-	if (vr_mode)
-	{
-		scissor.offset = { (int32_t)ScreenOffset.x / 2, (int32_t)ScreenOffset.y };
-	}
-	else
-	{
-		scissor.offset = { (int32_t)ScreenOffset.x, (int32_t)ScreenOffset.y };
-	}
-	*/
 	scissor.offset = { (int32_t)ScreenOffset.x, (int32_t)ScreenOffset.y };
 
-	VkExtent2D extent;
-	extent.width = (uint32_t)viewport.width;
-	extent.height = (uint32_t)viewport.height;
+	VkExtent2D _extent;
+	_extent.width = (uint32_t)viewport.width;
+	_extent.height = (uint32_t)viewport.height;
 
-	scissor.extent = extent;
+	scissor.extent = _extent;
 
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -1510,6 +1525,37 @@ void DebugDisplayMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 Sc
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
+	}
+
+	//2nd Eye
+	viewport.x += viewport.width * 4.0f;
+	scissor.offset.x = (int32_t)viewport.x;
+
+	VkPipelineViewportStateCreateInfo viewportState2 = {};
+	viewportState2.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState2.viewportCount = 1;
+	viewportState2.pViewports = &viewport;
+	viewportState2.scissorCount = 1;
+	viewportState2.pScissors = &scissor;
+
+	VkGraphicsPipelineCreateInfo pipelineInfo2 = {};
+	pipelineInfo2.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo2.stageCount = 2;
+	pipelineInfo2.pStages = shaderStages;
+	pipelineInfo2.pVertexInputState = &vertexInputInfo;
+	pipelineInfo2.pInputAssemblyState = &inputAssembly;
+	pipelineInfo2.pViewportState = &viewportState2;
+	pipelineInfo2.pRasterizationState = &rasterizer;
+	pipelineInfo2.pMultisampleState = &multisampling;
+	pipelineInfo2.pColorBlendState = &colorBlending;
+	pipelineInfo2.layout = pipelineLayout;
+	pipelineInfo2.renderPass = renderPass;
+	pipelineInfo2.subpass = 0;
+	pipelineInfo2.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo2.pDepthStencilState = NULL;
+
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo2, nullptr, &pipeline2) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create graphics pipeline2!");
 	}
 
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);
@@ -2041,6 +2087,37 @@ void FinalRenderingMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 
 
 	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create graphics pipeline!");
+	}
+
+	//2nd Eye
+	viewport.x = viewport.width;
+	scissor.offset.x = (int32_t)viewport.x;
+
+	VkPipelineViewportStateCreateInfo viewportState2 = {};
+	viewportState2.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	viewportState2.viewportCount = 1;
+	viewportState2.pViewports = &viewport;
+	viewportState2.scissorCount = 1;
+	viewportState2.pScissors = &scissor;
+
+	VkGraphicsPipelineCreateInfo pipelineInfo2 = {};
+	pipelineInfo2.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	pipelineInfo2.stageCount = 2;
+	pipelineInfo2.pStages = shaderStages;
+	pipelineInfo2.pVertexInputState = &vertexInputInfo;
+	pipelineInfo2.pInputAssemblyState = &inputAssembly;
+	pipelineInfo2.pViewportState = &viewportState2;
+	pipelineInfo2.pRasterizationState = &rasterizer;
+	pipelineInfo2.pMultisampleState = &multisampling;
+	pipelineInfo2.pColorBlendState = &colorBlending;
+	pipelineInfo2.layout = pipelineLayout;
+	pipelineInfo2.renderPass = renderPass;
+	pipelineInfo2.subpass = 0;
+	pipelineInfo2.basePipelineHandle = VK_NULL_HANDLE;
+	pipelineInfo2.pDepthStencilState = NULL;
+
+	if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo2, nullptr, &pipeline2) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create graphics pipeline2!");
 	}
 
 	vkDestroyShaderModule(device, fragShaderModule, nullptr);

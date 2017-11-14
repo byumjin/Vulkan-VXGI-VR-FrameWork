@@ -99,6 +99,8 @@ public:
 	std::vector<Texture*> textures;
 
 	VkPipeline pipeline;
+	VkPipeline pipeline2;
+
 	VkPipelineLayout pipelineLayout;
 
 	std::string vertexShaderPath;

@@ -46,20 +46,23 @@ void mouseDownCallback(GLFWwindow* window, int button, int action, int mods) {
 
 void mouseMoveCallback(GLFWwindow* window, double xPosition, double yPosition)
 {
-	if (rightMouseDown)
+	if (leftMouseDown)
 	{
-		double sensitivity = 0.5;
-		float deltaX = static_cast<float>((previousX - xPosition) * sensitivity);
-		float deltaY = static_cast<float>((previousY - yPosition) * sensitivity);
+		double sensitivity = 20.0;
+		
+		float deltaX = static_cast<float>((previousX - xPosition) * -sensitivity * deltaTime);
+		float deltaY = static_cast<float>((previousY - yPosition) * -sensitivity* deltaTime);
 
 		camera.UpdateOrbit(deltaX, deltaY, 0.0f);
 
 		previousX = xPosition;
 		previousY = yPosition;
 	}
-	else if (leftMouseDown)
+	else if (rightMouseDown)
 	{
-		double deltaZ = static_cast<float>((previousY - yPosition) * -0.05);
+		double sensitivity = 10.0;
+
+		double deltaZ = static_cast<float>((previousY - yPosition) * -sensitivity* deltaTime);
 
 		camera.UpdateOrbit(0.0f, 0.0f, (float)deltaZ);
 
@@ -69,31 +72,40 @@ void mouseMoveCallback(GLFWwindow* window, double xPosition, double yPosition)
 
 void mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	double deltaZ = static_cast<float>(yoffset * -0.5);
+	double sensitivity = 200.0;
+
+	double deltaZ = static_cast<float>(yoffset * -sensitivity * deltaTime);
 
 	camera.UpdateOrbit(0.0f, 0.0f, (float)deltaZ);
 }
 
 void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
+	double sensitivity = 100.0;
+
 	if (action == GLFW_REPEAT || action == GLFW_PRESS)
 	{
 		if(key == GLFW_KEY_W || key == GLFW_KEY_UP)
-			camera.UpdatePosition(0.0f, 0.0f, (float)-2.0);
-		else if(key == GLFW_KEY_S || key == GLFW_KEY_DOWN)
-			camera.UpdatePosition(0.0f, 0.0f, (float)2.0);
-		else if(key == GLFW_KEY_A || key == GLFW_KEY_LEFT)
-			camera.UpdatePosition((float)-2.0f, 0.0f, 0.0f);
-		else if(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
-			camera.UpdatePosition((float)2.0f, 0.0f, 0.0f);
-		else if(key == GLFW_KEY_G)
+			camera.UpdatePosition(0.0f, 0.0f, (float)(-sensitivity * deltaTime));
+		
+		if(key == GLFW_KEY_S || key == GLFW_KEY_DOWN)
+			camera.UpdatePosition(0.0f, 0.0f, (float)(sensitivity* deltaTime));
+		
+		if(key == GLFW_KEY_A || key == GLFW_KEY_LEFT)
+			camera.UpdatePosition((float)(-sensitivity* deltaTime), 0.0f, 0.0f);
+		
+		if(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
+			camera.UpdatePosition((float)(sensitivity* deltaTime), 0.0f, 0.0f);
+		
+		if(key == GLFW_KEY_G)
 		{
 			bDeubDisply = !bDeubDisply;
 
 			VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
 			app->reCreateSwapChain();
 		}
-		else if (key == GLFW_KEY_V)
+		
+		if (key == GLFW_KEY_V)
 		{
 			bVRmode = !bVRmode;
 
@@ -1169,6 +1181,9 @@ void VulkanApp::reCreateSwapChain()
 		float debugWidth = swapChainExtent.width * 0.25f;
 		float debugHeight = swapChainExtent.height * 0.25f;
 
+		if (bVRmode)
+			debugWidth *= 0.5f;
+
 		debugDisplayMaterials[0]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(0.0, 0.0));
 		debugDisplayMaterials[1]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth, 0.0));
 		debugDisplayMaterials[2]->createGraphicsPipeline(glm::vec2(debugWidth, debugHeight), glm::vec2(debugWidth * 2.0, 0.0));
@@ -1815,7 +1830,7 @@ void VulkanApp::createDeferredCommandBuffers()
 	if (bVRmode)
 	{
 		renderPassInfo.renderArea.extent = swapChainExtent;
-		renderPassInfo.renderArea.extent.width /= 2;
+		renderPassInfo.renderArea.extent.width /= 2;		
 	}
 	else
 	{
@@ -1832,6 +1847,7 @@ void VulkanApp::createDeferredCommandBuffers()
 	{
 		Object thisObject = objectManager[j];
 
+		
 		vkCmdBindPipeline(deferredCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, thisObject.material->pipeline);
 
 		VkBuffer vertexBuffers[] = { thisObject.geo->vertexBuffer };
@@ -1871,84 +1887,175 @@ void VulkanApp::createFrameBufferCommandPool()
 
 void VulkanApp::createFrameBufferCommandBuffers()
 {
-	frameBufferCommandBuffers.resize(swapChainFramebuffers.size());
-
-	VkCommandBufferAllocateInfo allocInfo = {};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.commandPool = frameBufferCommandPool;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = (uint32_t)frameBufferCommandBuffers.size();
-
-	if (vkAllocateCommandBuffers(device, &allocInfo, frameBufferCommandBuffers.data()) != VK_SUCCESS)
+	//Left and Main
 	{
-		throw std::runtime_error("failed to allocate command buffers!");
-	}
+		frameBufferCommandBuffers.resize(swapChainFramebuffers.size());
 
-	for (size_t i = 0; i < frameBufferCommandBuffers.size(); i++)
-	{
-		VkCommandBufferBeginInfo beginInfo = {};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-		beginInfo.pInheritanceInfo = nullptr; // Optional
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = frameBufferCommandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = (uint32_t)frameBufferCommandBuffers.size();
 
-		vkBeginCommandBuffer(frameBufferCommandBuffers[i], &beginInfo);
-
-		VkRenderPassBeginInfo renderPassInfo = {};
-		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassInfo.renderPass = frameBufferRenderPass;
-		renderPassInfo.framebuffer = swapChainFramebuffers[i];
-		renderPassInfo.renderArea.offset = { 0, 0 };
-		renderPassInfo.renderArea.extent = swapChainExtent;
-
-		std::array<VkClearValue, 1> clearValues = {};
-		clearValues[0].color = { 0.0f, 0.678431f, 0.902f, 1.0f };
-
-		renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-		renderPassInfo.pClearValues = clearValues.data();
-
-		vkCmdBeginRenderPass(frameBufferCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		vkCmdBindPipeline(frameBufferCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, frameBufferMaterial->pipeline);
-
-		VkBuffer vertexBuffers[] = { offScreenPlane->vertexBuffer };
-		VkBuffer indexBuffer = offScreenPlane->indexBuffer;
-		VkDeviceSize offsets[] = { 0 };
-
-		vkCmdBindDescriptorSets(frameBufferCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, frameBufferMaterial->pipelineLayout, 0, 1, &frameBufferMaterial->descriptorSet, 0, nullptr);
-
-		vkCmdBindVertexBuffers(frameBufferCommandBuffers[i], 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(frameBufferCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-		vkCmdDrawIndexed(frameBufferCommandBuffers[i], static_cast<uint32_t>(offScreenPlane->indices.size()), 1, 0, 0, 0);
-
-		if (bDeubDisply)
+		if (vkAllocateCommandBuffers(device, &allocInfo, frameBufferCommandBuffers.data()) != VK_SUCCESS)
 		{
-			for (size_t k = 0; k < NUM_DEBUGDISPLAY; k++)
-			{
-				vkCmdBindPipeline(frameBufferCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, debugDisplayMaterials[k]->pipeline);
-
-				VkBuffer vertexBuffers[] = { debugDisplayPlane->vertexBuffer };
-				VkBuffer indexBuffer = debugDisplayPlane->indexBuffer;
-				VkDeviceSize offsets[] = { 0 };
-
-				vkCmdBindDescriptorSets(frameBufferCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, debugDisplayMaterials[k]->pipelineLayout, 0, 1, &debugDisplayMaterials[k]->descriptorSet, 0, nullptr);
-
-				vkCmdBindVertexBuffers(frameBufferCommandBuffers[i], 0, 1, vertexBuffers, offsets);
-				vkCmdBindIndexBuffer(frameBufferCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-				vkCmdDrawIndexed(frameBufferCommandBuffers[i], static_cast<uint32_t>(debugDisplayPlane->indices.size()), 1, 0, 0, 0);
-			}
+			throw std::runtime_error("failed to allocate command buffers!");
 		}
 
-		vkCmdEndRenderPass(frameBufferCommandBuffers[i]);
+		for (size_t i = 0; i < frameBufferCommandBuffers.size(); i++)
+		{
+			VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+			beginInfo.pInheritanceInfo = nullptr; // Optional
 
-		if (vkEndCommandBuffer(frameBufferCommandBuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to record command buffer!");
+			vkBeginCommandBuffer(frameBufferCommandBuffers[i], &beginInfo);
+
+			VkRenderPassBeginInfo renderPassInfo = {};
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = frameBufferRenderPass;
+			renderPassInfo.framebuffer = swapChainFramebuffers[i];
+			renderPassInfo.renderArea.offset = { 0, 0 };
+			renderPassInfo.renderArea.extent = swapChainExtent;
+
+			std::array<VkClearValue, 1> clearValues = {};
+			clearValues[0].color = { 0.0f, 0.678431f, 0.902f, 1.0f };
+
+			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+			renderPassInfo.pClearValues = clearValues.data();
+
+			vkCmdBeginRenderPass(frameBufferCommandBuffers[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBindPipeline(frameBufferCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, frameBufferMaterial->pipeline);
+
+			VkBuffer vertexBuffers[] = { offScreenPlane->vertexBuffer };
+			VkBuffer indexBuffer = offScreenPlane->indexBuffer;
+			VkDeviceSize offsets[] = { 0 };
+
+			vkCmdBindDescriptorSets(frameBufferCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, frameBufferMaterial->pipelineLayout, 0, 1, &frameBufferMaterial->descriptorSet, 0, nullptr);
+
+			vkCmdBindVertexBuffers(frameBufferCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+			vkCmdBindIndexBuffer(frameBufferCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdDrawIndexed(frameBufferCommandBuffers[i], static_cast<uint32_t>(offScreenPlane->indices.size()), 1, 0, 0, 0);
+
+			
+			if (bDeubDisply)
+			{
+				for (size_t k = 0; k < NUM_DEBUGDISPLAY; k++)
+				{
+					vkCmdBindPipeline(frameBufferCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, debugDisplayMaterials[k]->pipeline);
+
+					VkBuffer vertexBuffers[] = { debugDisplayPlane->vertexBuffer };
+					VkBuffer indexBuffer = debugDisplayPlane->indexBuffer;
+					VkDeviceSize offsets[] = { 0 };
+
+					vkCmdBindDescriptorSets(frameBufferCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, debugDisplayMaterials[k]->pipelineLayout, 0, 1, &debugDisplayMaterials[k]->descriptorSet, 0, nullptr);
+
+					vkCmdBindVertexBuffers(frameBufferCommandBuffers[i], 0, 1, vertexBuffers, offsets);
+					vkCmdBindIndexBuffer(frameBufferCommandBuffers[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+					vkCmdDrawIndexed(frameBufferCommandBuffers[i], static_cast<uint32_t>(debugDisplayPlane->indices.size()), 1, 0, 0, 0);
+				}
+			}
+			
+
+			vkCmdEndRenderPass(frameBufferCommandBuffers[i]);
+
+			if (vkEndCommandBuffer(frameBufferCommandBuffers[i]) != VK_SUCCESS) {
+				throw std::runtime_error("failed to record command buffer!");
+			}
+		}
+	}
+
+	//Right
+	{
+		frameBufferCommandBuffers2.resize(swapChainFramebuffers.size());
+
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = frameBufferCommandPool;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = (uint32_t)frameBufferCommandBuffers2.size();
+
+		if (vkAllocateCommandBuffers(device, &allocInfo, frameBufferCommandBuffers2.data()) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to allocate command buffers!");
+		}
+
+		for (size_t i = 0; i < frameBufferCommandBuffers2.size(); i++)
+		{
+			VkCommandBufferBeginInfo beginInfo = {};
+			beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+			beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+			beginInfo.pInheritanceInfo = nullptr; // Optional
+
+			vkBeginCommandBuffer(frameBufferCommandBuffers2[i], &beginInfo);
+
+			VkRenderPassBeginInfo renderPassInfo = {};
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+			renderPassInfo.renderPass = frameBufferRenderPass;
+			renderPassInfo.framebuffer = swapChainFramebuffers[i];
+
+			renderPassInfo.renderArea.extent = swapChainExtent;
+			renderPassInfo.renderArea.extent.width /= 2;
+
+			renderPassInfo.renderArea.offset = { (int32_t)renderPassInfo.renderArea.extent.width, 0 };
+			
+
+			std::array<VkClearValue, 1> clearValues = {};
+			clearValues[0].color = { 0.0f, 0.678431f, 0.902f, 1.0f };
+
+			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+			renderPassInfo.pClearValues = clearValues.data();
+
+			vkCmdBeginRenderPass(frameBufferCommandBuffers2[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			
+			vkCmdBindPipeline(frameBufferCommandBuffers2[i], VK_PIPELINE_BIND_POINT_GRAPHICS, frameBufferMaterial->pipeline2);
+			
+
+			VkBuffer vertexBuffers[] = { offScreenPlane->vertexBuffer };
+			VkBuffer indexBuffer = offScreenPlane->indexBuffer;
+			VkDeviceSize offsets[] = { 0 };
+
+			vkCmdBindDescriptorSets(frameBufferCommandBuffers2[i], VK_PIPELINE_BIND_POINT_GRAPHICS, frameBufferMaterial->pipelineLayout, 0, 1, &frameBufferMaterial->descriptorSet, 0, nullptr);
+
+			vkCmdBindVertexBuffers(frameBufferCommandBuffers2[i], 0, 1, vertexBuffers, offsets);
+			vkCmdBindIndexBuffer(frameBufferCommandBuffers2[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+			vkCmdDrawIndexed(frameBufferCommandBuffers2[i], static_cast<uint32_t>(offScreenPlane->indices.size()), 1, 0, 0, 0);
+
+			
+			if (bDeubDisply)
+			{
+				for (size_t k = 0; k < NUM_DEBUGDISPLAY; k++)
+				{
+					vkCmdBindPipeline(frameBufferCommandBuffers2[i], VK_PIPELINE_BIND_POINT_GRAPHICS, debugDisplayMaterials[k]->pipeline2);
+
+					VkBuffer vertexBuffers[] = { debugDisplayPlane->vertexBuffer };
+					VkBuffer indexBuffer = debugDisplayPlane->indexBuffer;
+					VkDeviceSize offsets[] = { 0 };
+
+					vkCmdBindDescriptorSets(frameBufferCommandBuffers2[i], VK_PIPELINE_BIND_POINT_GRAPHICS, debugDisplayMaterials[k]->pipelineLayout, 0, 1, &debugDisplayMaterials[k]->descriptorSet, 0, nullptr);
+
+					vkCmdBindVertexBuffers(frameBufferCommandBuffers2[i], 0, 1, vertexBuffers, offsets);
+					vkCmdBindIndexBuffer(frameBufferCommandBuffers2[i], indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
+					vkCmdDrawIndexed(frameBufferCommandBuffers2[i], static_cast<uint32_t>(debugDisplayPlane->indices.size()), 1, 0, 0, 0);
+				}
+			}
+			
+
+			vkCmdEndRenderPass(frameBufferCommandBuffers2[i]);
+
+			if (vkEndCommandBuffer(frameBufferCommandBuffers2[i]) != VK_SUCCESS) {
+				throw std::runtime_error("failed to record command buffer!");
+			}
 		}
 	}
 }
 
-void VulkanApp::drawFrame()
+void VulkanApp::drawFrame(float time)
 {
 
 	uint32_t imageIndex;
@@ -1963,6 +2070,8 @@ void VulkanApp::drawFrame()
 	{
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
+
+	updateUniformBuffers(0, time);
 
 	//objectDrawQueue
 	VkSubmitInfo submitInfo = {};
@@ -2031,6 +2140,80 @@ void VulkanApp::drawFrame()
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
+	vkQueueWaitIdle(presentQueue);		
+
+	if (bVRmode)
+	{
+		updateUniformBuffers(1, time);
+
+		//objectDrawQueue
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+		//VkSemaphore firstWaitSemaphores[] = { objectDrawSemaphore };
+
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = postProcessSignalSemaphores;
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &deferredCommandBuffer;
+
+		VkSemaphore firstSignalSemaphores[] = { imageAvailableSemaphore };
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = firstSignalSemaphores;
+
+		if (vkQueueSubmit(objectDrawQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to submit draw command buffer!");
+		}
+
+		//postProcessQueue
+		VkSemaphore prevSemaphore = imageAvailableSemaphore;
+		VkSemaphore currentSemaphore;
+
+		for (size_t i = 0; i < postProcessStages.size(); i++)
+		{
+			PostProcess* thisPostProcess = postProcessStages[i];
+
+			submitInfo.waitSemaphoreCount = 1;
+			submitInfo.pWaitSemaphores = &prevSemaphore;
+			submitInfo.pWaitDstStageMask = waitStages;
+			submitInfo.commandBufferCount = 1;
+			submitInfo.pCommandBuffers = &thisPostProcess->commandBuffer;
+
+			currentSemaphore = thisPostProcess->postProcessSemaphore;
+
+			submitInfo.signalSemaphoreCount = 1;
+			submitInfo.pSignalSemaphores = &currentSemaphore;
+
+			if (vkQueueSubmit(thisPostProcess->material->queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+			{
+				throw std::runtime_error("failed to submit draw command buffer!");
+			}
+
+			prevSemaphore = currentSemaphore;
+		}
+
+
+
+		//frameQueue
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &currentSemaphore;
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &frameBufferCommandBuffers2[imageIndex];
+
+		VkSemaphore postProcessSignalSemaphores[] = { postProcessSemaphore };
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = postProcessSignalSemaphores;
+
+		if (vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to submit draw command buffer!");
+		}
+	}
+
 	//presentQueue
 	VkPresentInfoKHR presentInfo = {};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -2078,7 +2261,11 @@ void VulkanApp::run()
 {
 	initWindow();	
 	initVulkan();
+
+	_oldTime = startTime = std::chrono::high_resolution_clock::now();
+
 	mainLoop();
+
 	cleanUp();
 }
 
@@ -2100,22 +2287,22 @@ void VulkanApp::mainLoop()
 			std::string title = "VR Project | " + convertToString(fps) + " fps | " + convertToString(1000.0 / (double)fps) + " ms";
 			glfwSetWindowTitle(window, title.c_str());
 		}
+		
+		auto currentTime = std::chrono::high_resolution_clock::now();
+		float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() * 0.001f;
 
-		updateUniformBuffers();
+		deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - _oldTime).count() * 0.001f;
 
-		drawFrame();
+		drawFrame(time);
+
+		_oldTime = currentTime;
 	}
 
 	vkDeviceWaitIdle(device);
 }
 
-void VulkanApp::updateUniformBuffers()
+void VulkanApp::updateUniformBuffers(unsigned int EYE, float time)
 {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() * 0.001f;
-
 	UniformBufferObject ubo = {};
 	
 	ubo.modelMat = glm::mat4(1.0);
@@ -2123,12 +2310,12 @@ void VulkanApp::updateUniformBuffers()
 
 	if (bVRmode)
 	{
-		ubo.viewMat = camera.viewMatforVR[LEFT_EYE];
+		ubo.viewMat = camera.viewMatforVR[EYE];
 		ubo.projMat = camera.projMat;
-		ubo.viewProjMat = camera.viewProjMatforVR[LEFT_EYE];
-		ubo.InvViewProjMat = camera.InvViewProjMatforVR[LEFT_EYE];
+		ubo.viewProjMat = camera.viewProjMatforVR[EYE];
+		ubo.InvViewProjMat = camera.InvViewProjMatforVR[EYE];
 		ubo.modelViewProjMat = ubo.viewProjMat;
-		ubo.cameraWorldPos = camera.positionforVR[LEFT_EYE];
+		ubo.cameraWorldPos = camera.positionforVR[EYE];
 	}
 	else
 	{
@@ -2337,6 +2524,8 @@ void VulkanApp::cleanUpSwapChain()
 
 	vkFreeCommandBuffers(device, deferredCommandPool, 1, &deferredCommandBuffer);
 	vkFreeCommandBuffers(device, frameBufferCommandPool, static_cast<uint32_t>(frameBufferCommandBuffers.size()), frameBufferCommandBuffers.data());
+	vkFreeCommandBuffers(device, frameBufferCommandPool, static_cast<uint32_t>(frameBufferCommandBuffers2.size()), frameBufferCommandBuffers2.data());
+	
 
 	for (size_t i = 0; i < materialManager.size(); i++)
 	{

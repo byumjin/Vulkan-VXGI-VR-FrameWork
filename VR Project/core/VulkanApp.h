@@ -29,7 +29,9 @@ static double currentTime = 0.0;
 static int fps = 0;
 static int fpstracker = 0;
 
-
+static std::chrono::time_point<std::chrono::steady_clock> startTime;
+static std::chrono::time_point<std::chrono::steady_clock> _oldTime;
+static double deltaTime;
 
 static std::string convertToString(int number)
 {
@@ -102,7 +104,7 @@ public:
 	void createDeferredCommandPool();
 	void createDeferredCommandBuffers();
 
-	void drawFrame();
+	void drawFrame(float time);
 
 	void createSemaphores();
 
@@ -124,7 +126,7 @@ public:
 
 	void run();
 	
-	void updateUniformBuffers();
+	void updateUniformBuffers(unsigned int EYE, float time);
 
 	void mainLoop();
 
@@ -138,7 +140,7 @@ public:
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location,	int32_t code, const char* layerPrefix, const char* msg,	void* userData);
 	
-	
+	//bool bIsRightEyeDrawing;
 
 private:	
 	GLFWwindow* window;
@@ -178,6 +180,8 @@ private:
 	VkRenderPass frameBufferRenderPass;
 	VkCommandPool frameBufferCommandPool;
 	std::vector<VkCommandBuffer> frameBufferCommandBuffers;
+
+	std::vector<VkCommandBuffer> frameBufferCommandBuffers2;
 
 	VkDescriptorSetLayout descriptorSetLayout;
 	VkDescriptorPool descriptorPool;

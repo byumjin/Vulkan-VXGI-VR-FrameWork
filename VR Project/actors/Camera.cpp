@@ -1,6 +1,6 @@
 #include "Camera.h"
 
-Camera::Camera():IPD(5.0f)
+Camera::Camera():IPD(1.0f)
 {
 	viewMatforVR.resize(2);
 

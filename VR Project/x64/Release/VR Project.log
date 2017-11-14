@@ -1,20 +1,8 @@
-﻿  Actor.cpp
-  Light.cpp
-  Asset.cpp
-  AssetDatabase.cpp
-  Texture.cpp
-  Camera.cpp
-  Geometry.cpp
-  Material.cpp
-  Object.cpp
-  tiny_obj_loader.cc
-  PostProcess.cpp
-  VulkanApp.cpp
-  main.cpp
+﻿  Camera.cpp
   Generating code
-  433 of 4375 functions ( 9.9%) were compiled, the rest were copied from previous compilation.
-    7 functions were new in current compilation
-    34 functions had inline decision re-evaluated but remain unchanged
+  113 of 4375 functions ( 2.6%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    20 functions had inline decision re-evaluated but remain unchanged
   Finished generating code
   VR Project.vcxproj -> C:\Users\Jin\Documents\GitHub\Vulkan-VR-FrameWork\x64\Release\VR Project.exe
   VR Project.vcxproj -> C:\Users\Jin\Documents\GitHub\Vulkan-VR-FrameWork\x64\Release\VR Project.pdb (Full PDB)
