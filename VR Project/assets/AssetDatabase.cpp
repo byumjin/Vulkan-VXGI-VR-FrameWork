@@ -3,7 +3,7 @@
 AssetDatabase * AssetDatabase::instance = nullptr;
 VkDevice AssetDatabase::device = nullptr;
 VkPhysicalDevice AssetDatabase::physicalDevice = nullptr;
-VkCommandPool AssetDatabase::commandPool = nullptr;
+VkCommandPool AssetDatabase::commandPool = NULL;
 VkQueue AssetDatabase::queue = nullptr;
 
 //std::vector<WCHAR*> AssetDatabase::m_ListofGeometry;

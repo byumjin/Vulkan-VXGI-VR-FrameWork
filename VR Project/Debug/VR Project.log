@@ -1,7 +1,62 @@
-﻿  VulkanApp.cpp
-  Generating Code...
-  Compiling...
+﻿  Performing Custom Build Tools
+  shaders\shader.frag
+  Performing Custom Build Tools
+  shaders\shader.vert
+  Performing Custom Build Tools
+  shaders\lighting.frag
+  Performing Custom Build Tools
+  shaders\lighting.vert
+  Performing Custom Build Tools
+  shaders\debug0.frag
+  Performing Custom Build Tools
+  shaders\debug1.frag
+  Performing Custom Build Tools
+  shaders\debug2.frag
+  Performing Custom Build Tools
+  shaders\debug3.frag
+  Performing Custom Build Tools
+  shaders\debug4.frag
+  Performing Custom Build Tools
+  shaders\debug5.frag
+  Performing Custom Build Tools
+  shaders\debug6.frag
+  Performing Custom Build Tools
+  shaders\postprocess.vert
+  Performing Custom Build Tools
+  shaders\HDRHighlight.frag
+  Performing Custom Build Tools
+  shaders\debug10.frag
+  Performing Custom Build Tools
+  shaders\debug11.frag
+  Performing Custom Build Tools
+  shaders\debug7.frag
+  Performing Custom Build Tools
+  shaders\debug8.frag
+  Performing Custom Build Tools
+  shaders\debug9.frag
+  Performing Custom Build Tools
+  shaders\scene.frag
+  Performing Custom Build Tools
+  shaders\debug.vert
+  Performing Custom Build Tools
+  shaders\horizontalBlur.frag
+  Performing Custom Build Tools
+  shaders\verticalBlur.frag
+  Performing Custom Build Tools
+  shaders\lastPostProcess.frag
   main.cpp
+  VulkanApp.cpp
+  PostProcess.cpp
+  tiny_obj_loader.cc
+  Object.cpp
+  Material.cpp
+  Geometry.cpp
+  Camera.cpp
+  Texture.cpp
+  AssetDatabase.cpp
+c:\users\jin\documents\github\vulkan-vr-framework\vr project\assets\assetdatabase.cpp(6): error C2440: 'initializing': cannot convert from 'nullptr' to 'VkCommandPool'
+  c:\users\jin\documents\github\vulkan-vr-framework\vr project\assets\assetdatabase.cpp(6): note: A native nullptr can only be converted to bool or, using reinterpret_cast, to an integral type
+  Asset.cpp
+  Light.cpp
+  Actor.cpp
   Generating Code...
-  VR Project.vcxproj -> C:\Users\Jin\documents\visual studio 2015\Projects\VR Project\Debug\VR Project.exe
-  VR Project.vcxproj -> C:\Users\Jin\documents\visual studio 2015\Projects\VR Project\Debug\VR Project.pdb (Full PDB)
