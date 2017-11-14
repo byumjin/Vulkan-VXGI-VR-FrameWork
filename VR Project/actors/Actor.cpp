@@ -1,6 +1,6 @@
 #include "Actor.h"
 
-Actor::Actor() :position(glm::vec3(0.0)), scale(glm::vec3(1.0)), upVector(glm::vec3(0.0, 1.0, 0.0)), phi(0.0f)
+Actor::Actor() :position(glm::vec3(0.0)), scale(glm::vec3(1.0)), upVector(glm::vec3(0.0, 1.0, 0.0)), phi(0.0f), theta(0.0f)
 {
 }
 

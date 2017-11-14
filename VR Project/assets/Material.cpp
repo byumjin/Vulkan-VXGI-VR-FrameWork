@@ -131,14 +131,35 @@ void ObjectDrawMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 	VkViewport viewport = {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
-	viewport.width = (float)swapChainExtent.width;
+
+	
+	if (vr_mode)
+	{
+		viewport.width = (float)swapChainExtent.width * 0.5f;
+	}
+	else
+	{
+		viewport.width = (float)swapChainExtent.width;
+	}
+	
 	viewport.height = (float)swapChainExtent.height;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
 	scissor.offset = { 0, 0 };
-	scissor.extent = swapChainExtent;
+
+	
+	if (vr_mode)
+	{
+		VkExtent2D vrExtent = swapChainExtent;
+		vrExtent.width /= 2;
+		scissor.extent = vrExtent;
+	}
+	else
+	{
+		scissor.extent = swapChainExtent;
+	}
 
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -783,6 +804,18 @@ void LightingMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 	VkViewport viewport = {};
 	viewport.x = 0.0f;
 	viewport.y = 0.0f;
+
+	/*
+	if (vr_mode)
+	{
+		viewport.width = (float)swapChainExtent.width * 0.5f;
+	}
+	else
+	{
+		viewport.width = (float)swapChainExtent.width;
+	}
+	*/
+	
 	viewport.width = (float)swapChainExtent.width;
 	viewport.height = (float)swapChainExtent.height;
 	viewport.minDepth = 0.0f;
@@ -790,6 +823,19 @@ void LightingMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 
 	VkRect2D scissor = {};
 	scissor.offset = { 0, 0 };
+
+	/*
+	if (vr_mode)
+	{
+		VkExtent2D vrExtent = swapChainExtent;
+		vrExtent.width /= 2;
+		scissor.extent = vrExtent;
+	}
+	else
+	{
+		scissor.extent = swapChainExtent;
+	}
+	*/
 	scissor.extent = swapChainExtent;
 
 	VkPipelineViewportStateCreateInfo viewportState = {};
@@ -1342,12 +1388,35 @@ void DebugDisplayMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 Sc
 	VkViewport viewport = {};
 	viewport.x = ScreenOffset.x;
 	viewport.y = ScreenOffset.y;
-	viewport.width = Extent.x * widthScale;
+
+	/*
+	if (vr_mode)
+	{
+		viewport.width = (float)Extent.x * widthScale * 0.5f;
+	}
+	else
+	{
+		viewport.width = (float)Extent.x * widthScale;
+	}
+	*/
+
+	viewport.width = (float)Extent.x * widthScale;
 	viewport.height = Extent.y * heightScale;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
+
+	/*
+	if (vr_mode)
+	{
+		scissor.offset = { (int32_t)ScreenOffset.x / 2, (int32_t)ScreenOffset.y };
+	}
+	else
+	{
+		scissor.offset = { (int32_t)ScreenOffset.x, (int32_t)ScreenOffset.y };
+	}
+	*/
 	scissor.offset = { (int32_t)ScreenOffset.x, (int32_t)ScreenOffset.y };
 
 	VkExtent2D extent;
@@ -1862,12 +1931,23 @@ void FinalRenderingMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 
 	VkViewport viewport = {};
 	viewport.x = ScreenOffset.x;
 	viewport.y = ScreenOffset.y;
-	viewport.width = Extent.x * widthScale;
-	viewport.height = Extent.y * heightScale;
+	
+	
+	if (vr_mode)
+	{
+		viewport.width = (float)extent.x * widthScale * 0.5f;
+	}
+	else
+	{
+		viewport.width = (float)extent.x * widthScale;
+	}
+
+	viewport.height = extent.y * heightScale;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
+
 	scissor.offset = { (int32_t)ScreenOffset.x, (int32_t)ScreenOffset.y };
 
 	VkExtent2D extent;
@@ -2240,12 +2320,25 @@ void HDRHighlightMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 Sc
 	VkViewport viewport = {};
 	viewport.x = ScreenOffset.x;
 	viewport.y = ScreenOffset.y;
-	viewport.width = Extent.x * widthScale;
+
+	/*
+	if (vr_mode)
+	{
+		viewport.width = (float)extent.x * widthScale * 0.5f;
+	}
+	else
+	{
+		viewport.width = (float)extent.x * widthScale;
+	}
+	*/
+	viewport.width = (float)extent.x * widthScale;
+
 	viewport.height = Extent.y * heightScale;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
+
 	scissor.offset = { (int32_t)ScreenOffset.x, (int32_t)ScreenOffset.y };
 
 	VkExtent2D extent;
@@ -2616,12 +2709,26 @@ void BlurMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec2 ScreenOffs
 	VkViewport viewport = {};
 	viewport.x = ScreenOffset.x;
 	viewport.y = ScreenOffset.y;
-	viewport.width = Extent.x * widthScale;
+
+	viewport.width = (float)extent.x * widthScale;
+
+	/*
+	if (vr_mode)
+	{
+		viewport.width = (float)extent.x * widthScale * 0.5f;
+	}
+	else
+	{
+		viewport.width = (float)extent.x * widthScale;
+	}
+	*/
+
 	viewport.height = Extent.y * heightScale;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
+
 	scissor.offset = { (int32_t)ScreenOffset.x, (int32_t)ScreenOffset.y };
 
 	VkExtent2D extent;
@@ -3031,12 +3138,26 @@ void LastPostProcessgMaterial::createGraphicsPipeline(glm::vec2 Extent, glm::vec
 	VkViewport viewport = {};
 	viewport.x = ScreenOffset.x;
 	viewport.y = ScreenOffset.y;
-	viewport.width = Extent.x * widthScale;
-	viewport.height = Extent.y * heightScale;
+
+	viewport.width = (float)extent.x * widthScale;
+
+	/*
+	if (vr_mode)
+	{
+		viewport.width = (float)extent.x * widthScale;// *0.5f;
+	}
+	else
+	{
+		viewport.width = (float)extent.x * widthScale;
+	}
+	*/
+
+	viewport.height = extent.y * heightScale;
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 
 	VkRect2D scissor = {};
+
 	scissor.offset = { (int32_t)ScreenOffset.x, (int32_t)ScreenOffset.y };
 
 	VkExtent2D extent;

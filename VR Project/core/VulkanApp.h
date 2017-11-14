@@ -29,7 +29,7 @@ static double currentTime = 0.0;
 static int fps = 0;
 static int fpstracker = 0;
 
-static bool bDeubDisply = false;
+
 
 static std::string convertToString(int number)
 {

@@ -88,4 +88,6 @@ public:
 
 	float widthScale;
 	float heightScale;
+
+	bool vr_mode;
 };

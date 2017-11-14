@@ -70,8 +70,18 @@ uint32_t PostProcess::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags 
 
 void PostProcess::createImages()
 {
-	createImage((uint32_t)(widthScale * pExtent2D->width), (uint32_t)(heightScale * pExtent2D->height), format, tiling, usage, properties, outputImage, outputImageMemory);
-	outputImageView = createImageView(outputImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	if (vr_mode)
+	{
+		createImage((uint32_t)(widthScale * pExtent2D->width * 0.5f), (uint32_t)(heightScale * pExtent2D->height), format, tiling, usage, properties, outputImage, outputImageMemory);
+		outputImageView = createImageView(outputImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	}
+	else
+	{
+		createImage((uint32_t)(widthScale * pExtent2D->width), (uint32_t)(heightScale * pExtent2D->height), format, tiling, usage, properties, outputImage, outputImageMemory);
+		outputImageView = createImageView(outputImage, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	}
+
+	
 }
 
 
@@ -174,6 +184,18 @@ void PostProcess::createFramebuffer()
 	fbufCreateInfo.renderPass = renderPass;
 	fbufCreateInfo.pAttachments = &outputImageView;
 	fbufCreateInfo.attachmentCount = 1;
+
+	/*
+	if (vr_mode)
+	{
+		fbufCreateInfo.width = (uint32_t)(widthScale * pExtent2D->width * 0.5f);
+	}
+	else
+	{
+		fbufCreateInfo.width = (uint32_t)(widthScale * pExtent2D->width);
+	}
+	*/
+	
 	fbufCreateInfo.width = (uint32_t)(widthScale * pExtent2D->width);
 	fbufCreateInfo.height = (uint32_t)(heightScale * pExtent2D->height);
 	fbufCreateInfo.layers = LayerCount;
@@ -229,6 +251,17 @@ void PostProcess::createCommandBuffers()
 	renderPassInfo.renderArea.offset = { 0, 0 };
 
 	VkExtent2D extent2D;
+	/*
+	if (vr_mode)
+	{
+		extent2D.width = (uint32_t)(widthScale * pExtent2D->width* 0.5f);
+	}
+	else
+	{
+		extent2D.width = (uint32_t)(widthScale * pExtent2D->width);
+	}
+	*/
+
 	extent2D.width = (uint32_t)(widthScale * pExtent2D->width);
 	extent2D.height = (uint32_t)(heightScale * pExtent2D->height);
 

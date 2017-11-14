@@ -50,9 +50,10 @@ enum GBUFFER
 #define NUM_GBUFFERS 4
 #define NUM_DEBUGDISPLAY 12
 
-#define VR_MODE 0
+static bool bDeubDisply = false;
+static bool bVRmode = false;
 
 #define LEFT_EYE 0
 #define RIGHT_EYE 1
 
-#define DOWNSAMPLING_BLOOM 8.0f
+#define DOWNSAMPLING_BLOOM 4.0f

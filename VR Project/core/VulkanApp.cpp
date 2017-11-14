@@ -93,6 +93,18 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 			VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
 			app->reCreateSwapChain();
 		}
+		else if (key == GLFW_KEY_V)
+		{
+			bVRmode = !bVRmode;
+
+			camera.vr_mode = bVRmode;
+
+			VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+
+			//camera.UpdateAspectRatio(float(width) / float(height));
+
+			app->reCreateSwapChain();
+		}
 	}
 
 	
@@ -1099,7 +1111,8 @@ void VulkanApp::reCreateSwapChain()
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
-		PostProcess* thisPostProcess = postProcessStages[i];		
+		PostProcess* thisPostProcess = postProcessStages[i];	
+		thisPostProcess->vr_mode = bVRmode;
 		thisPostProcess->createImages();
 	}
 	
@@ -1130,6 +1143,7 @@ void VulkanApp::reCreateSwapChain()
 
 		if (tempObjectDrawMaterial != NULL)
 		{
+			materialManager[i]->vr_mode = bVRmode;
 			materialManager[i]->connectRenderPass(deferredRenderPass);
 			materialManager[i]->createGraphicsPipeline(swapChainExtent);
 
@@ -1137,6 +1151,7 @@ void VulkanApp::reCreateSwapChain()
 		}
 	}
 	
+	lightingMaterial->vr_mode = bVRmode;
 	lightingMaterial->setGbuffers(&gBufferImageViews, depthImageView);
 	lightingMaterial->updateDescriptorSet();
 	lightingMaterial->connectRenderPass(sceneStage->renderPass);
@@ -1145,6 +1160,7 @@ void VulkanApp::reCreateSwapChain()
 
 		for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 		{
+			debugDisplayMaterials[i]->vr_mode = bVRmode;
 			debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[3]->outputImageView);
 			debugDisplayMaterials[i]->updateDescriptorSet();
 			debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);
@@ -1169,27 +1185,31 @@ void VulkanApp::reCreateSwapChain()
 
 	
 	//[postProcess]
+	hdrHighlightMaterial->vr_mode = bVRmode;
 	hdrHighlightMaterial->setImageViews(sceneStage->outputImageView, depthImageView);
 	hdrHighlightMaterial->updateDescriptorSet();
 	hdrHighlightMaterial->connectRenderPass(postProcessStages[1]->renderPass);
 	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[1]->pExtent2D->width, postProcessStages[1]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
+	horizontalMaterial->vr_mode = bVRmode;
 	horizontalMaterial->setImageViews(postProcessStages[1]->outputImageView, depthImageView);
 	horizontalMaterial->updateDescriptorSet();
 	horizontalMaterial->connectRenderPass(postProcessStages[2]->renderPass);
 	horizontalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[2]->pExtent2D->width, postProcessStages[2]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
+	verticalMaterial->vr_mode = bVRmode;
 	verticalMaterial->setImageViews(postProcessStages[2]->outputImageView, depthImageView);
 	verticalMaterial->updateDescriptorSet();
 	verticalMaterial->connectRenderPass(postProcessStages[3]->renderPass);
 	verticalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[3]->pExtent2D->width, postProcessStages[3]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
+	lastPostProcessMaterial->vr_mode = bVRmode;
 	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, postProcessStages[3]->outputImageView, depthImageView);
 	lastPostProcessMaterial->updateDescriptorSet();
 	lastPostProcessMaterial->connectRenderPass(postProcessStages[4]->renderPass);
 	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[4]->pExtent2D->width, postProcessStages[4]->pExtent2D->height), glm::vec2(0.0, 0.0));
 	
-
+	frameBufferMaterial->vr_mode = bVRmode;
 	frameBufferMaterial->setImageViews(theLastPostProcess->outputImageView, depthImageView);
 	frameBufferMaterial->updateDescriptorSet();
 	frameBufferMaterial->connectRenderPass(frameBufferRenderPass);
@@ -1219,16 +1239,34 @@ void VulkanApp::createGbuffers()
 	for (uint32_t i = 0; i < gBufferImages.size(); i++)
 	{
 		
-		createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+		if (bVRmode)
+		{
+			createImage(swapChainExtent.width / 2, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+		}
+		else
+		{
+			createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+		}
+
+		
 
 	}
 }
 
 void VulkanApp::createSceneBuffer()
 {
-	createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sceneImage, sceneImageMemories);
+	if (bVRmode)
+	{
+		createImage(swapChainExtent.width / 2, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sceneImage, sceneImageMemories);
+	}
+	else
+	{
+		createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, sceneImage, sceneImageMemories);
+	}
 }
 
 void VulkanApp::createImageViews()
@@ -1425,8 +1463,18 @@ void VulkanApp::createDepthResources()
 {
 	VkFormat depthFormat = findDepthFormat();
 
-	createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
-	depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	if (bVRmode)
+	{
+		createImage(swapChainExtent.width/2, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+		depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	}
+	else
+	{
+		createImage(swapChainExtent.width, swapChainExtent.height, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depthImage, depthImageMemory);
+		depthImageView = createImageView(depthImage, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	}
+
+	
 
 	transitionImageLayout(depthImage, depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, deferredCommandPool);
 }
@@ -1692,7 +1740,17 @@ void VulkanApp::createDeferredFramebuffer()
 	fbufCreateInfo.renderPass = deferredRenderPass;
 	fbufCreateInfo.pAttachments = attachments.data();
 	fbufCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	fbufCreateInfo.width = swapChainExtent.width;
+
+	if (bVRmode)
+	{
+		fbufCreateInfo.width = swapChainExtent.width/2;
+	}
+	else
+	{
+		fbufCreateInfo.width = swapChainExtent.width;
+	}
+
+	
 	fbufCreateInfo.height = swapChainExtent.height;
 	fbufCreateInfo.layers = LayerCount;
 
@@ -1753,7 +1811,18 @@ void VulkanApp::createDeferredCommandBuffers()
 	renderPassInfo.renderPass = deferredRenderPass;
 	renderPassInfo.framebuffer = deferredFrameBuffer;
 	renderPassInfo.renderArea.offset = { 0, 0 };
-	renderPassInfo.renderArea.extent = swapChainExtent;
+
+	if (bVRmode)
+	{
+		renderPassInfo.renderArea.extent = swapChainExtent;
+		renderPassInfo.renderArea.extent.width /= 2;
+	}
+	else
+	{
+		renderPassInfo.renderArea.extent = swapChainExtent;
+	}
+
+	
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
 
@@ -2050,13 +2119,29 @@ void VulkanApp::updateUniformBuffers()
 	UniformBufferObject ubo = {};
 	
 	ubo.modelMat = glm::mat4(1.0);
-	ubo.viewMat = camera.viewMat;
-	ubo.projMat = camera.projMat;
-	ubo.viewProjMat = camera.viewProjMat;
-	ubo.InvViewProjMat = camera.InvViewProjMat;
-	ubo.modelViewProjMat = ubo.viewProjMat;
+	
+
+	if (bVRmode)
+	{
+		ubo.viewMat = camera.viewMatforVR[LEFT_EYE];
+		ubo.projMat = camera.projMat;
+		ubo.viewProjMat = camera.viewProjMatforVR[LEFT_EYE];
+		ubo.InvViewProjMat = camera.InvViewProjMatforVR[LEFT_EYE];
+		ubo.modelViewProjMat = ubo.viewProjMat;
+		ubo.cameraWorldPos = camera.positionforVR[LEFT_EYE];
+	}
+	else
+	{
+		ubo.viewMat = camera.viewMat;
+		ubo.projMat = camera.projMat;
+		ubo.viewProjMat = camera.viewProjMat;
+		ubo.InvViewProjMat = camera.InvViewProjMat;
+		ubo.modelViewProjMat = ubo.viewProjMat;
+		ubo.cameraWorldPos = camera.position;
+	}
+	
 	ubo.InvTransposeMat = ubo.modelMat;
-	ubo.cameraWorldPos = camera.position;
+	
 
 	for (size_t i = 0; i < objectManager.size(); i++)
 	{
@@ -2066,7 +2151,8 @@ void VulkanApp::updateUniformBuffers()
 		thisObject.UpdateOrbit(time * 20.0f, 0.0f, 0.0f);
 
 		ubo.modelMat = thisObject.modelMat;
-		ubo.modelViewProjMat = camera.viewProjMat * thisObject.modelMat;
+		ubo.modelViewProjMat = ubo.viewProjMat * thisObject.modelMat;
+		
 
 		glm::mat4 A = ubo.modelMat;
 		A[3] = glm::vec4(0, 0, 0, 1);
@@ -2090,13 +2176,14 @@ void VulkanApp::updateUniformBuffers()
 		UniformBufferObject offScreenUbo = {};
 
 		offScreenUbo.modelMat = glm::mat4(1.0);
-		offScreenUbo.viewMat = camera.viewMat;
-		offScreenUbo.projMat = camera.projMat;
-		offScreenUbo.viewProjMat = camera.viewProjMat;
-		offScreenUbo.InvViewProjMat = camera.InvViewProjMat;
+
+		offScreenUbo.viewMat = ubo.viewMat;
+		offScreenUbo.projMat = ubo.projMat;
+		offScreenUbo.viewProjMat = ubo.viewProjMat;
+		offScreenUbo.InvViewProjMat = ubo.InvViewProjMat;
 		offScreenUbo.modelViewProjMat = offScreenUbo.viewProjMat;
 		offScreenUbo.InvTransposeMat = offScreenUbo.modelMat;
-		offScreenUbo.cameraWorldPos = camera.position;
+		offScreenUbo.cameraWorldPos = ubo.cameraWorldPos;
 
 		offScreenPlane->updateVertexBuffer(offScreenUbo.InvViewProjMat);
 		offScreenPlaneforPostProcess->updateVertexBuffer(offScreenUbo.InvViewProjMat);
@@ -2118,13 +2205,13 @@ void VulkanApp::updateUniformBuffers()
 			UniformBufferObject debugDisplayUbo = {};
 
 			debugDisplayUbo.modelMat = glm::mat4(1.0);
-			debugDisplayUbo.viewMat = camera.viewMat;
-			debugDisplayUbo.projMat = camera.projMat;
-			debugDisplayUbo.viewProjMat = camera.viewProjMat;
-			debugDisplayUbo.InvViewProjMat = camera.InvViewProjMat;
+			debugDisplayUbo.viewMat = ubo.viewMat;
+			debugDisplayUbo.projMat = ubo.projMat;
+			debugDisplayUbo.viewProjMat = ubo.viewProjMat;
+			debugDisplayUbo.InvViewProjMat = ubo.InvViewProjMat;
 			debugDisplayUbo.modelViewProjMat = debugDisplayUbo.viewProjMat;
 			debugDisplayUbo.InvTransposeMat = debugDisplayUbo.modelMat;
-			debugDisplayUbo.cameraWorldPos = camera.position;
+			debugDisplayUbo.cameraWorldPos = ubo.cameraWorldPos;
 
 			debugDisplayPlane->updateVertexBuffer(debugDisplayUbo.InvViewProjMat);
 
@@ -2143,13 +2230,13 @@ void VulkanApp::updateUniformBuffers()
 		UniformBufferObject offScreenUbo = {};
 
 		offScreenUbo.modelMat = glm::mat4(1.0);
-		offScreenUbo.viewMat = camera.viewMat;
-		offScreenUbo.projMat = camera.projMat;
-		offScreenUbo.viewProjMat = camera.viewProjMat;
-		offScreenUbo.InvViewProjMat = camera.InvViewProjMat;
+		offScreenUbo.viewMat = ubo.viewMat;
+		offScreenUbo.projMat = ubo.projMat;
+		offScreenUbo.viewProjMat = ubo.viewProjMat;
+		offScreenUbo.InvViewProjMat = ubo.InvViewProjMat;
 		offScreenUbo.modelViewProjMat = offScreenUbo.viewProjMat;
 		offScreenUbo.InvTransposeMat = offScreenUbo.modelMat;
-		offScreenUbo.cameraWorldPos = camera.position;
+		offScreenUbo.cameraWorldPos = ubo.cameraWorldPos;
 
 		offScreenPlaneforPostProcess->updateVertexBuffer(offScreenUbo.InvViewProjMat);
 
@@ -2178,13 +2265,13 @@ void VulkanApp::updateUniformBuffers()
 		UniformBufferObject offScreenUbo = {};
 
 		offScreenUbo.modelMat = glm::mat4(1.0);
-		offScreenUbo.viewMat = camera.viewMat;
-		offScreenUbo.projMat = camera.projMat;
-		offScreenUbo.viewProjMat = camera.viewProjMat;
-		offScreenUbo.InvViewProjMat = camera.InvViewProjMat;
+		offScreenUbo.viewMat = ubo.viewMat;
+		offScreenUbo.projMat = ubo.projMat;
+		offScreenUbo.viewProjMat = ubo.viewProjMat;
+		offScreenUbo.InvViewProjMat = ubo.InvViewProjMat;
 		offScreenUbo.modelViewProjMat = offScreenUbo.viewProjMat;
 		offScreenUbo.InvTransposeMat = offScreenUbo.modelMat;
-		offScreenUbo.cameraWorldPos = camera.position;
+		offScreenUbo.cameraWorldPos = ubo.cameraWorldPos;
 
 		offScreenPlaneforPostProcess->updateVertexBuffer(offScreenUbo.InvViewProjMat);
 
