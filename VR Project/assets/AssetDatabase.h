@@ -8,7 +8,7 @@
 #include "../actors/Object.h"
 
 //ObjectList
-static std::vector<Object> objectManager;
+static std::vector<Object*> objectManager;
 static std::vector<Material*> materialManager;
 
 struct AssetData_GeoListInfo

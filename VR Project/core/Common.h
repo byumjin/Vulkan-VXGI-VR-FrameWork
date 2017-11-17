@@ -56,4 +56,5 @@ static bool bVRmode = false;
 #define LEFT_EYE 0
 #define RIGHT_EYE 1
 
-#define DOWNSAMPLING_BLOOM 4.0f
+#define DOWNSAMPLING_BLOOM 2.0f
+

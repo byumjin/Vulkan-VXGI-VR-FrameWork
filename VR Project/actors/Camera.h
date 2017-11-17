@@ -43,6 +43,7 @@ public:
 	float fovY;
 
 	float IPD;
+	float focalDistance;
 
 	std::vector<glm::vec3> positionforVR;
 

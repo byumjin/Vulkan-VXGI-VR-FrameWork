@@ -50,7 +50,7 @@ public:
 
 	void setShaderPaths(std::string v, std::string f, std::string c);
 
-	void LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string path);
+	void LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam);
 
 	virtual void createDescriptorSetLayout() = 0;
 	virtual void createDescriptorPool() = 0;

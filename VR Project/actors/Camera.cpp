@@ -1,6 +1,7 @@
 #include "Camera.h"
 
-Camera::Camera():IPD(1.0f)
+
+Camera::Camera():IPD(1.0f), focalDistance(10.0f)
 {
 	viewMatforVR.resize(2);
 
@@ -41,6 +42,9 @@ void Camera::setCamera(glm::vec3 eyePositionParam, glm::vec3 lookVectorParam, gl
 	viewMatforVR[LEFT_EYE] = glm::lookAt(positionforVR[LEFT_EYE], centerPosition - glm::length(IPD) * rightVec*0.5f, upVector);
 	viewMatforVR[RIGHT_EYE] = glm::lookAt(positionforVR[RIGHT_EYE], centerPosition + glm::length(IPD) * rightVec*0.5f, upVector);
 
+	//viewMatforVR[LEFT_EYE] = glm::lookAt(positionforVR[LEFT_EYE], position + lookVector * focalDistance, upVector);
+	//viewMatforVR[RIGHT_EYE] = glm::lookAt(positionforVR[RIGHT_EYE], position + lookVector * focalDistance, upVector);
+
 	projMatforVR = glm::perspective(glm::radians(fovY), width*0.5f / height, nearPlane, farPlane);
 	projMatforVR[1][1] *= -1;
 
@@ -68,8 +72,6 @@ void Camera::UpdateAspectRatio(float aspectRatio)
 
 	InvViewProjMatforVR[LEFT_EYE] = glm::inverse(viewProjMatforVR[LEFT_EYE]);
 	InvViewProjMatforVR[RIGHT_EYE] = glm::inverse(viewProjMatforVR[RIGHT_EYE]);
-	
-	
 }
 
 void Camera::UpdateOrbit(float deltaX, float deltaY, float deltaZ)
@@ -85,14 +87,16 @@ void Camera::UpdateOrbit(float deltaX, float deltaY, float deltaZ)
 	
 		glm::vec3 rightVec = glm::normalize(glm::cross(lookVector, upVector));
 
-		positionforVR[LEFT_EYE] = glm::vec3(viewMat[3]) - glm::length(IPD) * rightVec*0.5f;
-		positionforVR[RIGHT_EYE] = glm::vec3(viewMat[3]) + glm::length(IPD) * rightVec*0.5f;
+		positionforVR[LEFT_EYE] = position - glm::length(IPD) * rightVec*0.5f;
+		positionforVR[RIGHT_EYE] = position + glm::length(IPD) * rightVec*0.5f;
 
-		glm::mat4 tempMat = viewMat;
+		glm::mat4 tempMat = modelMat;
 		tempMat[3] = glm::vec4(positionforVR[LEFT_EYE], 1.0f);
-		viewMatforVR[LEFT_EYE] = tempMat;
+		viewMatforVR[LEFT_EYE] = glm::inverse(tempMat);
+
+		tempMat = modelMat;
 		tempMat[3] = glm::vec4(positionforVR[RIGHT_EYE], 1.0f);
-		viewMatforVR[RIGHT_EYE] = tempMat;
+		viewMatforVR[RIGHT_EYE] = glm::inverse(tempMat);
 
 		///????
 		positionforVR[RIGHT_EYE] = position - glm::length(IPD) * rightVec*0.5f;
@@ -119,14 +123,16 @@ void Camera::UpdatePosition(float deltaX, float deltaY, float deltaZ)
 	
 		glm::vec3 rightVec = glm::normalize(glm::cross(lookVector, upVector));
 
-		positionforVR[LEFT_EYE] = glm::vec3(viewMat[3]) - glm::length(IPD) * rightVec*0.5f;
-		positionforVR[RIGHT_EYE] = glm::vec3(viewMat[3]) + glm::length(IPD) * rightVec*0.5f;
+		positionforVR[LEFT_EYE] = position - glm::length(IPD) * rightVec*0.5f;
+		positionforVR[RIGHT_EYE] = position + glm::length(IPD) * rightVec*0.5f;
 
-		glm::mat4 tempMat = viewMat;
+		glm::mat4 tempMat = modelMat;
 		tempMat[3] = glm::vec4(positionforVR[LEFT_EYE], 1.0f);
-		viewMatforVR[LEFT_EYE] = tempMat;
+		viewMatforVR[LEFT_EYE] = glm::inverse(tempMat);
+
+		tempMat = modelMat;
 		tempMat[3] = glm::vec4(positionforVR[RIGHT_EYE], 1.0f);
-		viewMatforVR[RIGHT_EYE] = tempMat;
+		viewMatforVR[RIGHT_EYE] = glm::inverse(tempMat);
 
 		///????
 		positionforVR[RIGHT_EYE] = position - glm::length(IPD) * rightVec*0.5f;

@@ -33,12 +33,14 @@ void Material::addTexture(Texture* texture)
 	textures.push_back(texture);
 }
 
-void Material::LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string path)
+void Material::LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam)
 {
 	device = deviceParam;
 	physicalDevice = physicalDeviceParam;
 	commandPool = commandPoolParam;
 	queue = queueParam;
+
+	path = pathParam;
 
 	createDescriptorSetLayout();
 	createUniformBuffer();
@@ -270,7 +272,7 @@ void ObjectDrawMaterial::createGraphicsPipeline(VkExtent2D swapChainExtent)
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
 	depthStencil.minDepthBounds = 0.0f; // Optional
 	depthStencil.maxDepthBounds = 1.0f; // Optional
-	depthStencil.stencilTestEnable = VK_FALSE;
+	depthStencil.stencilTestEnable = VK_TRUE;
 	depthStencil.front = {}; // Optional
 	depthStencil.back = {}; // Optional
 
@@ -2600,9 +2602,9 @@ void BlurMaterial::createDescriptorSet()
 	samplerInfo.magFilter = VK_FILTER_LINEAR;
 	samplerInfo.minFilter = VK_FILTER_LINEAR;
 
-	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+	samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
 
 	samplerInfo.anisotropyEnable = VK_FALSE;
 	//samplerInfo.maxAnisotropy = 16;
@@ -2613,7 +2615,7 @@ void BlurMaterial::createDescriptorSet()
 	samplerInfo.compareEnable = VK_FALSE;
 	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
-	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	samplerInfo.mipLodBias = 0.0f;
 	samplerInfo.minLod = 0.0f;
 	samplerInfo.maxLod = 0.0f;

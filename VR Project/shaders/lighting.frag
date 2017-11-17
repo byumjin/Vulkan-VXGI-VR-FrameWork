@@ -133,6 +133,9 @@ void main() {
 			specularTerm = GGX_Spec(NormalVec, HalfVec, Roughness, diffuseTerm, vec3(SpecColorMap.xyz), LightingFunGGX_FV(LoH, Roughness)) *energyConservation;
 			resultColor += (diffuseTerm + specularTerm) * NoL * dls.instances[i].lightInfo.lightColor.xyz * dls.instances[i].lightInfo.lightColor.a;
 		}
+
+		//ambient
+		//resultColor += BasicColorMap.xyz * 0.2;
 	}
 
 	
@@ -142,7 +145,7 @@ void main() {
 
 	resultColor += vec3(EmissiveMap.xyz);
 
-
+	
 
 
 

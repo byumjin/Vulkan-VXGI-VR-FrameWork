@@ -50,8 +50,8 @@ void mouseMoveCallback(GLFWwindow* window, double xPosition, double yPosition)
 	{
 		double sensitivity = 20.0;
 		
-		float deltaX = static_cast<float>((previousX - xPosition) * -sensitivity * deltaTime);
-		float deltaY = static_cast<float>((previousY - yPosition) * -sensitivity* deltaTime);
+		float deltaX = static_cast<float>((previousX - xPosition) * sensitivity * deltaTime);
+		float deltaY = static_cast<float>((previousY - yPosition) * sensitivity* deltaTime);
 
 		camera.UpdateOrbit(deltaX, deltaY, 0.0f);
 
@@ -79,12 +79,38 @@ void mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 	camera.UpdateOrbit(0.0f, 0.0f, (float)deltaZ);
 }
 
+void VulkanApp::getAsynckeyState()
+{
+	double sensitivity = 10.0;
+
+	if (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP))
+	{
+		camera.UpdatePosition(0.0f, 0.0f, (float)(-sensitivity * deltaTime));
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))
+	{
+		camera.UpdatePosition(0.0f, 0.0f, (float)(sensitivity* deltaTime));
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT))
+	{
+		camera.UpdatePosition((float)(-sensitivity* deltaTime), 0.0f, 0.0f);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_D) || glfwGetKey(window, GLFW_KEY_RIGHT))
+	{
+		camera.UpdatePosition((float)(sensitivity* deltaTime), 0.0f, 0.0f);
+	}
+}
+
 void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-	double sensitivity = 100.0;
 
-	if (action == GLFW_REPEAT || action == GLFW_PRESS)
-	{
+	
+
+	/*
+	double sensitivity = 100.0;
 		if(key == GLFW_KEY_W || key == GLFW_KEY_UP)
 			camera.UpdatePosition(0.0f, 0.0f, (float)(-sensitivity * deltaTime));
 		
@@ -96,7 +122,10 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 		
 		if(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
 			camera.UpdatePosition((float)(sensitivity* deltaTime), 0.0f, 0.0f);
-		
+	*/
+
+	if (action == GLFW_REPEAT || action == GLFW_PRESS)
+	{
 		if(key == GLFW_KEY_G)
 		{
 			bDeubDisply = !bDeubDisply;
@@ -120,6 +149,7 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 	
 }
 
+//OCULUS res: 2160 1200
 VulkanApp::VulkanApp():WIDTH(800), HEIGHT(600), physicalDevice(VK_NULL_HANDLE), LayerCount(1)
 {
 
@@ -150,6 +180,670 @@ void VulkanApp::initWindow()
 	glfwSetKeyCallback(window, keyboardCallback);
 }
 
+void VulkanApp::LoadTexture(std::string path)
+{
+	AssetDatabase::GetInstance()->LoadAsset<Texture>(path);
+	AssetDatabase::GetInstance()->textureList.push_back(path);
+}
+
+void VulkanApp::LoadTextures()
+{
+	LoadTexture("textures/storm_hero_d3crusaderf_base_diff.tga");
+	LoadTexture("textures/storm_hero_d3crusaderf_base_spec.tga");
+	LoadTexture("textures/storm_hero_d3crusaderf_base_norm.tga");
+	LoadTexture("textures/storm_hero_d3crusaderf_base_emis.tga");
+
+	LoadTexture("textures/storm_hero_chromie_ultimate_diff.tga");
+	LoadTexture("textures/storm_hero_chromie_ultimate_spec.tga");
+	LoadTexture("textures/storm_hero_chromie_ultimate_norm.tga");
+	LoadTexture("textures/storm_hero_chromie_ultimate_emis.tga");
+
+	LoadTexture("textures/Cerberus/Cerberus_A.tga");
+	LoadTexture("textures/Cerberus/Cerberus_S.tga");
+	LoadTexture("textures/Cerberus/Cerberus_N.tga");
+	LoadTexture("textures/Cerberus/Cerberus_E.tga");
+
+	LoadTexture("textures/sponza/no_emis.tga");
+
+	//arch
+	LoadTexture("textures/sponza/arch/arch_albedo.tga");
+	LoadTexture("textures/sponza/arch/arch_spec.tga");
+	LoadTexture("textures/sponza/arch/arch_norm.tga");
+	
+	//bricks
+	LoadTexture("textures/sponza/bricks/bricks_albedo.tga");
+	LoadTexture("textures/sponza/bricks/bricks_spec.tga");
+	LoadTexture("textures/sponza/bricks/bricks_norm.tga");
+
+	//celing
+	LoadTexture("textures/sponza/ceiling/ceiling_albedo.tga");
+	LoadTexture("textures/sponza/ceiling/ceiling_spec.tga");
+	LoadTexture("textures/sponza/ceiling/ceiling_norm.tga");
+
+	//column
+	LoadTexture("textures/sponza/column/column_a_albedo.tga");
+	LoadTexture("textures/sponza/column/column_a_spec.tga");
+	LoadTexture("textures/sponza/column/column_a_norm.tga");
+	LoadTexture("textures/sponza/column/column_b_albedo.tga");
+	LoadTexture("textures/sponza/column/column_b_spec.tga");
+	LoadTexture("textures/sponza/column/column_b_norm.tga");
+	LoadTexture("textures/sponza/column/column_c_albedo.tga");
+	LoadTexture("textures/sponza/column/column_c_spec.tga");
+	LoadTexture("textures/sponza/column/column_c_norm.tga");
+
+	//curtain
+	LoadTexture("textures/sponza/curtain/sponza_curtain_blue_albedo.tga");
+	LoadTexture("textures/sponza/curtain/sponza_curtain_green_albedo.tga");
+	LoadTexture("textures/sponza/curtain/sponza_curtain_red_albedo.tga");
+
+	LoadTexture("textures/sponza/curtain/sponza_curtain_blue_spec.tga");
+	LoadTexture("textures/sponza/curtain/sponza_curtain_green_spec.tga");
+	LoadTexture("textures/sponza/curtain/sponza_curtain_red_spec.tga");
+
+	LoadTexture("textures/sponza/curtain/sponza_curtain_norm.tga");
+
+	//detail
+	LoadTexture("textures/sponza/detail/detail_albedo.tga");
+	LoadTexture("textures/sponza/detail/detail_spec.tga");
+	LoadTexture("textures/sponza/detail/detail_norm.tga");
+
+	//fabric
+	LoadTexture("textures/sponza/fabric/fabric_blue_albedo.tga");
+	LoadTexture("textures/sponza/fabric/fabric_blue_spec.tga");
+	LoadTexture("textures/sponza/fabric/fabric_green_albedo.tga");
+
+	LoadTexture("textures/sponza/fabric/fabric_green_spec.tga");
+	LoadTexture("textures/sponza/fabric/fabric_red_albedo.tga");
+	LoadTexture("textures/sponza/fabric/fabric_red_spec.tga");
+
+	LoadTexture("textures/sponza/fabric/fabric_norm.tga");
+
+	//flagpole
+	LoadTexture("textures/sponza/flagpole/flagpole_albedo.tga");
+	LoadTexture("textures/sponza/flagpole/flagpole_spec.tga");
+	LoadTexture("textures/sponza/flagpole/flagpole_norm.tga");
+
+	//floor
+	LoadTexture("textures/sponza/floor/floor_albedo.tga");
+	LoadTexture("textures/sponza/floor/floor_spec.tga");
+	LoadTexture("textures/sponza/floor/floor_norm.tga");
+
+	//lion
+	LoadTexture("textures/sponza/lion/lion_albedo.tga");
+	LoadTexture("textures/sponza/lion/lion_norm.tga");
+	LoadTexture("textures/sponza/lion/lion_spec.tga");
+
+	//lion_back
+	LoadTexture("textures/sponza/lion_background/lion_background_albedo.tga");
+	LoadTexture("textures/sponza/lion_background/lion_background_spec.tga");
+	LoadTexture("textures/sponza/lion_background/lion_background_norm.tga");
+
+	//plant
+	LoadTexture("textures/sponza/plant/vase_plant_albedo.tga");
+	LoadTexture("textures/sponza/plant/vase_plant_spec.tga");
+	LoadTexture("textures/sponza/plant/vase_plant_norm.tga");
+	LoadTexture("textures/sponza/plant/vase_plant_emiss.tga");
+
+	//roof
+	LoadTexture("textures/sponza/roof/roof_albedo.tga");
+	LoadTexture("textures/sponza/roof/roof_spec.tga");
+	LoadTexture("textures/sponza/roof/roof_norm.tga");
+
+	//thorn
+	LoadTexture("textures/sponza/thorn/sponza_thorn_albedo.tga");
+	LoadTexture("textures/sponza/thorn/sponza_thorn_spec.tga");
+	LoadTexture("textures/sponza/thorn/sponza_thorn_norm.tga");
+	LoadTexture("textures/sponza/thorn/sponza_thorn_emis.tga");
+
+	//vase
+	LoadTexture("textures/sponza/vase/vase_albedo.tga");
+	LoadTexture("textures/sponza/vase/vase_spec.tga");
+	LoadTexture("textures/sponza/vase/vase_norm.tga");
+
+	//vase others
+	LoadTexture("textures/sponza/vase_hanging/vase_hanging_albedo.tga");
+	LoadTexture("textures/sponza/vase_hanging/vase_round_albedo.tga");
+	LoadTexture("textures/sponza/vase_hanging/vase_round_spec.tga");
+	LoadTexture("textures/sponza/vase_hanging/vase_round_norm.tga");
+
+	//chain
+	LoadTexture("textures/sponza/chain/chain_albedo.tga");
+	LoadTexture("textures/sponza/chain/chain_spec.tga");
+	LoadTexture("textures/sponza/chain/chain_norm.tga");
+	
+
+}
+
+void VulkanApp::LoadObjectMaterials()
+{
+	LoadObjectMaterial("standard_material", "textures/storm_hero_d3crusaderf_base_diff.tga", "textures/storm_hero_d3crusaderf_base_spec.tga", "textures/storm_hero_d3crusaderf_base_norm.tga", "textures/storm_hero_d3crusaderf_base_emis.tga");
+	LoadObjectMaterial("standard_material2", "textures/storm_hero_chromie_ultimate_diff.tga", "textures/storm_hero_chromie_ultimate_spec.tga", "textures/storm_hero_chromie_ultimate_norm.tga", "textures/storm_hero_chromie_ultimate_emis.tga");
+	LoadObjectMaterial("standard_material3", "textures/Cerberus/Cerberus_A.tga", "textures/Cerberus/Cerberus_S.tga", "textures/Cerberus/Cerberus_N.tga", "textures/Cerberus/Cerberus_E.tga");
+
+	//arch
+	LoadObjectMaterial("arch", "textures/sponza/arch/arch_albedo.tga", "textures/sponza/arch/arch_spec.tga", "textures/sponza/arch/arch_norm.tga", "textures/sponza/no_emis.tga");
+
+	//bricks
+	LoadObjectMaterial("bricks", "textures/sponza/bricks/bricks_albedo.tga", "textures/sponza/bricks/bricks_spec.tga", "textures/sponza/bricks/bricks_norm.tga", "textures/sponza/no_emis.tga");
+
+	//ceiling
+	LoadObjectMaterial("ceiling", "textures/sponza/ceiling/ceiling_albedo.tga", "textures/sponza/ceiling/ceiling_spec.tga", "textures/sponza/ceiling/ceiling_norm.tga", "textures/sponza/no_emis.tga");
+
+	//chain
+	LoadObjectMaterial("chain", "textures/sponza/chain/chain_albedo.tga", "textures/sponza/chain/chain_spec.tga", "textures/sponza/chain/chain_norm.tga", "textures/sponza/no_emis.tga");
+
+	//column_a
+	LoadObjectMaterial("column_a", "textures/sponza/column/column_a_albedo.tga", "textures/sponza/column/column_a_spec.tga", "textures/sponza/column/column_a_norm.tga", "textures/sponza/no_emis.tga");
+	//column_b
+	LoadObjectMaterial("column_b", "textures/sponza/column/column_b_albedo.tga", "textures/sponza/column/column_b_spec.tga", "textures/sponza/column/column_b_norm.tga", "textures/sponza/no_emis.tga");
+	//column_c
+	LoadObjectMaterial("column_c", "textures/sponza/column/column_c_albedo.tga", "textures/sponza/column/column_c_spec.tga", "textures/sponza/column/column_c_norm.tga", "textures/sponza/no_emis.tga");
+
+
+	//curtain_blue
+	LoadObjectMaterial("curtain_blue", "textures/sponza/curtain/sponza_curtain_blue_albedo.tga", "textures/sponza/curtain/sponza_curtain_blue_spec.tga", "textures/sponza/curtain/sponza_curtain_norm.tga", "textures/sponza/no_emis.tga");
+
+	//curtain_green
+	LoadObjectMaterial("curtain_green", "textures/sponza/curtain/sponza_curtain_green_albedo.tga", "textures/sponza/curtain/sponza_curtain_green_spec.tga", "textures/sponza/curtain/sponza_curtain_norm.tga", "textures/sponza/no_emis.tga");
+
+	//curtain_red
+	LoadObjectMaterial("curtain_red", "textures/sponza/curtain/sponza_curtain_red_albedo.tga", "textures/sponza/curtain/sponza_curtain_red_spec.tga", "textures/sponza/curtain/sponza_curtain_norm.tga", "textures/sponza/no_emis.tga");
+		
+	//detail
+	LoadObjectMaterial("detail", "textures/sponza/detail/detail_albedo.tga", "textures/sponza/detail/detail_spec.tga", "textures/sponza/detail/detail_norm.tga", "textures/sponza/no_emis.tga");
+		
+	//fabric_blue
+	LoadObjectMaterial("fabric_blue", "textures/sponza/fabric/fabric_blue_albedo.tga", "textures/sponza/fabric/fabric_blue_spec.tga", "textures/sponza/fabric/fabric_norm.tga", "textures/sponza/no_emis.tga");
+
+	//fabric_green
+	LoadObjectMaterial("fabric_green", "textures/sponza/fabric/fabric_green_albedo.tga", "textures/sponza/fabric/fabric_green_spec.tga", "textures/sponza/fabric/fabric_norm.tga", "textures/sponza/no_emis.tga");
+
+	//fabric_red
+	LoadObjectMaterial("fabric_red", "textures/sponza/fabric/fabric_red_albedo.tga", "textures/sponza/fabric/fabric_red_spec.tga", "textures/sponza/fabric/fabric_norm.tga", "textures/sponza/no_emis.tga");
+
+	//flagpole
+	LoadObjectMaterial("flagpole", "textures/sponza/flagpole/flagpole_albedo.tga", "textures/sponza/flagpole/flagpole_spec.tga", "textures/sponza/flagpole/flagpole_norm.tga", "textures/sponza/no_emis.tga");
+
+	//floor
+	LoadObjectMaterial("floor", "textures/sponza/floor/floor_albedo.tga", "textures/sponza/floor/floor_spec.tga", "textures/sponza/floor/floor_norm.tga", "textures/sponza/no_emis.tga");
+
+	//lion
+	LoadObjectMaterial("lion", "textures/sponza/lion/lion_albedo.tga", "textures/sponza/lion/lion_spec.tga", "textures/sponza/lion/lion_norm.tga", "textures/sponza/no_emis.tga");
+	
+	//lion_back
+	LoadObjectMaterial("lion_back", "textures/sponza/lion_background/lion_background_albedo.tga", "textures/sponza/lion_background/lion_background_spec.tga", "textures/sponza/lion_background/lion_background_norm.tga", "textures/sponza/no_emis.tga");
+
+	//plant
+	LoadObjectMaterial("plant", "textures/sponza/plant/vase_plant_albedo.tga", "textures/sponza/plant/vase_plant_spec.tga", "textures/sponza/plant/vase_plant_norm.tga", "textures/sponza/plant/vase_plant_emiss.tga");
+
+	//roof
+	LoadObjectMaterial("roof", "textures/sponza/roof/roof_albedo.tga", "textures/sponza/roof/roof_spec.tga", "textures/sponza/roof/roof_norm.tga", "textures/sponza/no_emis.tga");
+
+	//thorn
+	LoadObjectMaterial("thorn", "textures/sponza/thorn/sponza_thorn_albedo.tga", "textures/sponza/thorn/sponza_thorn_spec.tga", "textures/sponza/thorn/sponza_thorn_norm.tga", "textures/sponza/thorn/sponza_thorn_emis.tga");
+
+	//vase
+	LoadObjectMaterial("vase", "textures/sponza/vase/vase_albedo.tga", "textures/sponza/vase/vase_spec.tga", "textures/sponza/vase/vase_norm.tga", "textures/sponza/no_emis.tga");
+
+	//vase_hanging
+	LoadObjectMaterial("vase_hanging", "textures/sponza/vase_hanging/vase_hanging_albedo.tga", "textures/sponza/vase_hanging/vase_round_spec.tga", "textures/sponza/vase_hanging/vase_round_norm.tga", "textures/sponza/no_emis.tga");
+
+	//vase_round
+	LoadObjectMaterial("vase_round", "textures/sponza/vase_hanging/vase_round_albedo.tga", "textures/sponza/vase_hanging/vase_round_spec.tga", "textures/sponza/vase_hanging/vase_round_norm.tga", "textures/sponza/no_emis.tga");
+
+}
+
+void VulkanApp::LoadObjectMaterial(std::string name, std::string albedo, std::string specular, std::string normal, std::string emissive)
+{
+	ObjectDrawMaterial* tempMat = new ObjectDrawMaterial;
+	tempMat->LoadFromFilename(device, physicalDevice, deferredCommandPool, objectDrawQueue, name);
+	tempMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>(albedo));
+	tempMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>(specular));
+	tempMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>(normal));
+	tempMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>(emissive));
+	tempMat->setShaderPaths("shaders/shader.vert.spv", "shaders/shader.frag.spv", "");
+	tempMat->createDescriptorSet();
+
+	materialManager.push_back(tempMat);
+}
+
+void VulkanApp::ConnectSponzaMaterials(Object* sponza)
+{
+	Material* thorn = AssetDatabase::LoadMaterial("thorn");
+	sponza->connectMaterial(thorn, 0); //Leaf
+	sponza->connectMaterial(thorn, 275); //Leaf
+	sponza->connectMaterial(thorn, 276); //Leaf
+	sponza->connectMaterial(thorn, 277); //Leaf
+	sponza->connectMaterial(thorn, 278); //Leaf
+	sponza->connectMaterial(thorn, 279); //Leaf
+	sponza->connectMaterial(thorn, 280); //Leaf
+	sponza->connectMaterial(thorn, 281); //Leaf
+
+	Material* fabric_e = AssetDatabase::LoadMaterial("fabric_green");
+
+	sponza->connectMaterial(fabric_e, 282); //curtain_red
+	sponza->connectMaterial(fabric_e, 285); //curtain_red
+	sponza->connectMaterial(fabric_e, 287); //curtain_red
+
+	Material* fabric_g = AssetDatabase::LoadMaterial("curtain_blue");
+	sponza->connectMaterial(fabric_g, 320); //curtain_green
+	sponza->connectMaterial(fabric_g, 326); //curtain_green
+	sponza->connectMaterial(fabric_g, 329); //curtain_green
+
+	Material* fabric_c = AssetDatabase::LoadMaterial("curtain_red");
+	sponza->connectMaterial(fabric_c, 321); //curtain_red
+	sponza->connectMaterial(fabric_c, 323); //curtain_red
+	sponza->connectMaterial(fabric_c, 325); //curtain_red
+	sponza->connectMaterial(fabric_c, 328); //curtain_red
+
+	Material* fabric_f = AssetDatabase::LoadMaterial("curtain_green");
+	sponza->connectMaterial(fabric_f, 322); //curtain_blue
+	sponza->connectMaterial(fabric_f, 324); //curtain_blue
+	sponza->connectMaterial(fabric_f, 327); //curtain_blue
+
+	Material* fabric_a = AssetDatabase::LoadMaterial("fabric_red");
+	sponza->connectMaterial(fabric_a, 283); //fabric_red
+	sponza->connectMaterial(fabric_a, 286); //fabric_red
+	sponza->connectMaterial(fabric_a, 289); //fabric_red
+
+	Material* fabric_d = AssetDatabase::LoadMaterial("fabric_blue");
+	sponza->connectMaterial(fabric_d, 284); //fabric_blue
+	sponza->connectMaterial(fabric_d, 288); //fabric_blue
+
+	Material* chain = AssetDatabase::LoadMaterial("chain");
+	sponza->connectMaterial(chain, 330); //chain
+	sponza->connectMaterial(chain, 331); //chain
+	sponza->connectMaterial(chain, 332); //chain
+	sponza->connectMaterial(chain, 333); //chain
+	sponza->connectMaterial(chain, 339); //chain
+	sponza->connectMaterial(chain, 340); //chain
+	sponza->connectMaterial(chain, 341); //chain
+	sponza->connectMaterial(chain, 342); //chain
+	sponza->connectMaterial(chain, 348); //chain
+	sponza->connectMaterial(chain, 349); //chain
+	sponza->connectMaterial(chain, 350); //chain
+	sponza->connectMaterial(chain, 351); //chain
+	sponza->connectMaterial(chain, 357); //chain
+	sponza->connectMaterial(chain, 358); //chain
+	sponza->connectMaterial(chain, 359); //chain
+	sponza->connectMaterial(chain, 360); //chain
+
+	Material* vase_hanging = AssetDatabase::LoadMaterial("vase_hanging");
+	sponza->connectMaterial(vase_hanging, 334); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 335); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 336); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 337); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 338); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 343); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 344); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 345); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 346); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 347); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 352); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 353); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 354); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 355); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 356); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 361); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 362); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 363); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 364); //vase_hanging
+	sponza->connectMaterial(vase_hanging, 365); //vase_hanging
+
+
+
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("thorn"), 1); //Material__57
+
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase_round"), 366); //Material__57
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase_round"), 367); //Material__57
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase_round"), 368); //Material__57
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase_round"), 369); //Material__57
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase_round"), 370); //Material__57
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase_round"), 371); //Material__57
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase_round"), 372); //Material__57
+
+
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase"), 373); //vase
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase"), 374); //vase
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase"), 375); //vase
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase"), 376); //vase
+
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("vase_round"), 2); //vase_round
+
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("lion_back"), 3); //Material__298
+
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("lion"), 377); //Material__25
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("lion"), 378); //Material__25
+
+	sponza->connectMaterial(AssetDatabase::LoadMaterial("fabric_red"), 4); //16___Default
+
+	Material* bricks = AssetDatabase::LoadMaterial("bricks");
+	sponza->connectMaterial(bricks, 5); //bricks
+	sponza->connectMaterial(bricks, 6); //bricks
+	sponza->connectMaterial(bricks, 34); //bricks
+	sponza->connectMaterial(bricks, 36); //bricks
+	sponza->connectMaterial(bricks, 66); //bricks
+	sponza->connectMaterial(bricks, 68); //bricks
+	sponza->connectMaterial(bricks, 69); //bricks
+	sponza->connectMaterial(bricks, 75); //bricks
+	sponza->connectMaterial(bricks, 116); //bricks
+	sponza->connectMaterial(bricks, 258); //bricks
+	sponza->connectMaterial(bricks, 379); //bricks
+	sponza->connectMaterial(bricks, 382); //bricks
+
+	Material* roof = AssetDatabase::LoadMaterial("roof");
+	sponza->connectMaterial(roof, 380); //roof
+	sponza->connectMaterial(roof, 381); //roof
+
+
+	Material* arch = AssetDatabase::LoadMaterial("arch");
+	sponza->connectMaterial(arch, 7); //arch
+	sponza->connectMaterial(arch, 17); //arch
+	sponza->connectMaterial(arch, 20); //arch
+	sponza->connectMaterial(arch, 21); //arch
+	sponza->connectMaterial(arch, 37); //arch
+	sponza->connectMaterial(arch, 39); //arch
+	sponza->connectMaterial(arch, 41); //arch
+	sponza->connectMaterial(arch, 43); //arch
+	sponza->connectMaterial(arch, 45); //arch
+	sponza->connectMaterial(arch, 47); //arch
+	sponza->connectMaterial(arch, 49); //arch
+	sponza->connectMaterial(arch, 51); //arch
+	sponza->connectMaterial(arch, 53); //arch
+	sponza->connectMaterial(arch, 55); //arch
+	sponza->connectMaterial(arch, 56); //arch
+	sponza->connectMaterial(arch, 57); //arch
+	sponza->connectMaterial(arch, 58); //arch
+	sponza->connectMaterial(arch, 59); //arch
+	sponza->connectMaterial(arch, 60); //arch
+	sponza->connectMaterial(arch, 61); //arch
+	sponza->connectMaterial(arch, 62); //arch
+	sponza->connectMaterial(arch, 63); //arch
+	sponza->connectMaterial(arch, 64); //arch
+	sponza->connectMaterial(arch, 65); //arch
+	sponza->connectMaterial(arch, 67); //arch
+	sponza->connectMaterial(arch, 122); //arch
+	sponza->connectMaterial(arch, 123); //arch
+	sponza->connectMaterial(arch, 124); //arch
+
+	Material* ceiling = AssetDatabase::LoadMaterial("ceiling");
+	sponza->connectMaterial(ceiling, 8); //ceiling
+	sponza->connectMaterial(ceiling, 19); //ceiling
+	sponza->connectMaterial(ceiling, 35); //ceiling
+	sponza->connectMaterial(ceiling, 38); //ceiling
+	sponza->connectMaterial(ceiling, 40); //ceiling
+	sponza->connectMaterial(ceiling, 42); //ceiling
+	sponza->connectMaterial(ceiling, 44); //ceiling
+	sponza->connectMaterial(ceiling, 46); //ceiling
+	sponza->connectMaterial(ceiling, 48); //ceiling
+	sponza->connectMaterial(ceiling, 50); //ceiling
+	sponza->connectMaterial(ceiling, 52); //ceiling
+	sponza->connectMaterial(ceiling, 54); //ceiling
+
+	Material* column_a = AssetDatabase::LoadMaterial("column_a");
+	sponza->connectMaterial(column_a, 9); //column_a
+	sponza->connectMaterial(column_a, 10); //column_a
+	sponza->connectMaterial(column_a, 11); //column_a
+	sponza->connectMaterial(column_a, 12); //column_a
+	sponza->connectMaterial(column_a, 13); //column_a
+	sponza->connectMaterial(column_a, 14); //column_a
+	sponza->connectMaterial(column_a, 15); //column_a
+	sponza->connectMaterial(column_a, 16); //column_a
+	sponza->connectMaterial(column_a, 118); //column_a
+	sponza->connectMaterial(column_a, 119); //column_a
+	sponza->connectMaterial(column_a, 120); //column_a
+	sponza->connectMaterial(column_a, 121); //column_a
+
+	Material* column_b = AssetDatabase::LoadMaterial("column_b");
+	sponza->connectMaterial(column_b, 125); //column_b
+	sponza->connectMaterial(column_b, 126); //column_b
+	sponza->connectMaterial(column_b, 127); //column_b
+	sponza->connectMaterial(column_b, 128); //column_b
+	sponza->connectMaterial(column_b, 129); //column_b
+	sponza->connectMaterial(column_b, 130); //column_b
+	sponza->connectMaterial(column_b, 131); //column_b
+	sponza->connectMaterial(column_b, 132); //column_b
+	sponza->connectMaterial(column_b, 133); //column_b
+	sponza->connectMaterial(column_b, 134); //column_b
+	sponza->connectMaterial(column_b, 135); //column_b
+	sponza->connectMaterial(column_b, 136); //column_b
+	sponza->connectMaterial(column_b, 137); //column_b
+	sponza->connectMaterial(column_b, 138); //column_b
+	sponza->connectMaterial(column_b, 139); //column_b
+	sponza->connectMaterial(column_b, 140); //column_b
+	sponza->connectMaterial(column_b, 141); //column_b
+	sponza->connectMaterial(column_b, 142); //column_b
+	sponza->connectMaterial(column_b, 143); //column_b
+	sponza->connectMaterial(column_b, 144); //column_b
+	sponza->connectMaterial(column_b, 145); //column_b
+	sponza->connectMaterial(column_b, 146); //column_b
+	sponza->connectMaterial(column_b, 147); //column_b
+	sponza->connectMaterial(column_b, 148); //column_b
+	sponza->connectMaterial(column_b, 149); //column_b
+	sponza->connectMaterial(column_b, 150); //column_b
+	sponza->connectMaterial(column_b, 151); //column_b
+	sponza->connectMaterial(column_b, 152); //column_b
+	sponza->connectMaterial(column_b, 153); //column_b
+	sponza->connectMaterial(column_b, 154); //column_b
+	sponza->connectMaterial(column_b, 155); //column_b
+	sponza->connectMaterial(column_b, 156); //column_b
+	sponza->connectMaterial(column_b, 157); //column_b
+	sponza->connectMaterial(column_b, 158); //column_b
+	sponza->connectMaterial(column_b, 159); //column_b
+	sponza->connectMaterial(column_b, 160); //column_b
+	sponza->connectMaterial(column_b, 161); //column_b
+	sponza->connectMaterial(column_b, 162); //column_b
+	sponza->connectMaterial(column_b, 163); //column_b
+	sponza->connectMaterial(column_b, 164); //column_b
+	sponza->connectMaterial(column_b, 165); //column_b
+	sponza->connectMaterial(column_b, 166); //column_b
+	sponza->connectMaterial(column_b, 167); //column_b
+	sponza->connectMaterial(column_b, 168); //column_b
+	sponza->connectMaterial(column_b, 169); //column_b
+	sponza->connectMaterial(column_b, 170); //column_b
+	sponza->connectMaterial(column_b, 171); //column_b
+	sponza->connectMaterial(column_b, 172); //column_b
+	sponza->connectMaterial(column_b, 173); //column_b
+	sponza->connectMaterial(column_b, 174); //column_b
+	sponza->connectMaterial(column_b, 175); //column_b
+	sponza->connectMaterial(column_b, 176); //column_b
+	sponza->connectMaterial(column_b, 177); //column_b
+	sponza->connectMaterial(column_b, 178); //column_b
+	sponza->connectMaterial(column_b, 179); //column_b
+	sponza->connectMaterial(column_b, 180); //column_b
+	sponza->connectMaterial(column_b, 181); //column_b
+	sponza->connectMaterial(column_b, 182); //column_b
+	sponza->connectMaterial(column_b, 183); //column_b
+	sponza->connectMaterial(column_b, 184); //column_b
+	sponza->connectMaterial(column_b, 185); //column_b
+	sponza->connectMaterial(column_b, 186); //column_b
+	sponza->connectMaterial(column_b, 187); //column_b
+	sponza->connectMaterial(column_b, 188); //column_b
+	sponza->connectMaterial(column_b, 189); //column_b
+	sponza->connectMaterial(column_b, 190); //column_b
+	sponza->connectMaterial(column_b, 191); //column_b
+	sponza->connectMaterial(column_b, 192); //column_b
+	sponza->connectMaterial(column_b, 193); //column_b
+	sponza->connectMaterial(column_b, 194); //column_b
+	sponza->connectMaterial(column_b, 195); //column_b
+	sponza->connectMaterial(column_b, 196); //column_b
+	sponza->connectMaterial(column_b, 197); //column_b
+	sponza->connectMaterial(column_b, 198); //column_b
+	sponza->connectMaterial(column_b, 199); //column_b
+	sponza->connectMaterial(column_b, 200); //column_b
+	sponza->connectMaterial(column_b, 201); //column_b
+	sponza->connectMaterial(column_b, 202); //column_b
+	sponza->connectMaterial(column_b, 203); //column_b
+	sponza->connectMaterial(column_b, 204); //column_b
+	sponza->connectMaterial(column_b, 205); //column_b
+	sponza->connectMaterial(column_b, 206); //column_b
+	sponza->connectMaterial(column_b, 207); //column_b
+	sponza->connectMaterial(column_b, 208); //column_b
+	sponza->connectMaterial(column_b, 209); //column_b
+	sponza->connectMaterial(column_b, 210); //column_b
+	sponza->connectMaterial(column_b, 211); //column_b
+	sponza->connectMaterial(column_b, 212); //column_b
+	sponza->connectMaterial(column_b, 213); //column_b
+	sponza->connectMaterial(column_b, 214); //column_b
+	sponza->connectMaterial(column_b, 215); //column_b
+	sponza->connectMaterial(column_b, 216); //column_b
+	sponza->connectMaterial(column_b, 217); //column_b
+	sponza->connectMaterial(column_b, 218); //column_b
+	sponza->connectMaterial(column_b, 219); //column_b
+	sponza->connectMaterial(column_b, 220); //column_b
+	sponza->connectMaterial(column_b, 221); //column_b
+	sponza->connectMaterial(column_b, 222); //column_b
+	sponza->connectMaterial(column_b, 223); //column_b
+	sponza->connectMaterial(column_b, 224); //column_b
+	sponza->connectMaterial(column_b, 225); //column_b
+	sponza->connectMaterial(column_b, 226); //column_b
+	sponza->connectMaterial(column_b, 227); //column_b
+	sponza->connectMaterial(column_b, 228); //column_b
+	sponza->connectMaterial(column_b, 229); //column_b
+	sponza->connectMaterial(column_b, 230); //column_b
+	sponza->connectMaterial(column_b, 231); //column_b
+	sponza->connectMaterial(column_b, 232); //column_b
+	sponza->connectMaterial(column_b, 233); //column_b
+	sponza->connectMaterial(column_b, 234); //column_b
+	sponza->connectMaterial(column_b, 235); //column_b
+	sponza->connectMaterial(column_b, 236); //column_b
+	sponza->connectMaterial(column_b, 237); //column_b
+	sponza->connectMaterial(column_b, 238); //column_b
+	sponza->connectMaterial(column_b, 239); //column_b
+	sponza->connectMaterial(column_b, 240); //column_b
+	sponza->connectMaterial(column_b, 241); //column_b
+	sponza->connectMaterial(column_b, 242); //column_b
+	sponza->connectMaterial(column_b, 243); //column_b
+	sponza->connectMaterial(column_b, 244); //column_b
+	sponza->connectMaterial(column_b, 245); //column_b
+	sponza->connectMaterial(column_b, 246); //column_b
+	sponza->connectMaterial(column_b, 247); //column_b
+	sponza->connectMaterial(column_b, 248); //column_b
+	sponza->connectMaterial(column_b, 249); //column_b
+	sponza->connectMaterial(column_b, 250); //column_b
+	sponza->connectMaterial(column_b, 251); //column_b
+	sponza->connectMaterial(column_b, 252); //column_b
+	sponza->connectMaterial(column_b, 253); //column_b
+	sponza->connectMaterial(column_b, 254); //column_b
+	sponza->connectMaterial(column_b, 255); //column_b
+	sponza->connectMaterial(column_b, 256); //column_b
+	sponza->connectMaterial(column_b, 257); //column_b
+
+	Material* column_c = AssetDatabase::LoadMaterial("column_c");
+	sponza->connectMaterial(column_c, 22); //column_c
+	sponza->connectMaterial(column_c, 23); //column_c
+	sponza->connectMaterial(column_c, 24); //column_c
+	sponza->connectMaterial(column_c, 25); //column_c
+	sponza->connectMaterial(column_c, 26); //column_c
+	sponza->connectMaterial(column_c, 27); //column_c
+	sponza->connectMaterial(column_c, 28); //column_c
+	sponza->connectMaterial(column_c, 29); //column_c
+	sponza->connectMaterial(column_c, 30); //column_c
+	sponza->connectMaterial(column_c, 31); //column_c
+	sponza->connectMaterial(column_c, 32); //column_c
+	sponza->connectMaterial(column_c, 33); //column_c
+	sponza->connectMaterial(column_c, 76); //column_c
+	sponza->connectMaterial(column_c, 77); //column_c
+	sponza->connectMaterial(column_c, 78); //column_c
+	sponza->connectMaterial(column_c, 79); //column_c
+	sponza->connectMaterial(column_c, 80); //column_c
+	sponza->connectMaterial(column_c, 81); //column_c
+	sponza->connectMaterial(column_c, 82); //column_c
+	sponza->connectMaterial(column_c, 83); //column_c
+	sponza->connectMaterial(column_c, 84); //column_c
+	sponza->connectMaterial(column_c, 85); //column_c
+	sponza->connectMaterial(column_c, 86); //column_c
+	sponza->connectMaterial(column_c, 87); //column_c
+	sponza->connectMaterial(column_c, 88); //column_c
+	sponza->connectMaterial(column_c, 89); //column_c
+	sponza->connectMaterial(column_c, 90); //column_c
+	sponza->connectMaterial(column_c, 91); //column_c
+	sponza->connectMaterial(column_c, 92); //column_c
+	sponza->connectMaterial(column_c, 93); //column_c
+	sponza->connectMaterial(column_c, 94); //column_c
+	sponza->connectMaterial(column_c, 95); //column_c
+	sponza->connectMaterial(column_c, 96); //column_c
+	sponza->connectMaterial(column_c, 97); //column_c
+	sponza->connectMaterial(column_c, 98); //column_c
+	sponza->connectMaterial(column_c, 99); //column_c
+	sponza->connectMaterial(column_c, 100); //column_c
+	sponza->connectMaterial(column_c, 101); //column_c
+	sponza->connectMaterial(column_c, 102); //column_c
+	sponza->connectMaterial(column_c, 103); //column_c
+	sponza->connectMaterial(column_c, 104); //column_c
+	sponza->connectMaterial(column_c, 105); //column_c
+	sponza->connectMaterial(column_c, 106); //column_c
+	sponza->connectMaterial(column_c, 107); //column_c
+	sponza->connectMaterial(column_c, 108); //column_c
+	sponza->connectMaterial(column_c, 109); //column_c
+	sponza->connectMaterial(column_c, 110); //column_c
+	sponza->connectMaterial(column_c, 111); //column_c
+	sponza->connectMaterial(column_c, 112); //column_c
+	sponza->connectMaterial(column_c, 113); //column_c
+	sponza->connectMaterial(column_c, 114); //column_c
+	sponza->connectMaterial(column_c, 115); //column_c
+
+	Material* floor = AssetDatabase::LoadMaterial("floor");
+	sponza->connectMaterial(floor, 18); //floor
+	sponza->connectMaterial(floor, 117); //floor
+
+
+	Material* detail = AssetDatabase::LoadMaterial("detail");
+	sponza->connectMaterial(detail, 70); //detail
+	sponza->connectMaterial(detail, 71); //detail
+	sponza->connectMaterial(detail, 72); //detail
+	sponza->connectMaterial(detail, 73); //detail
+	sponza->connectMaterial(detail, 74); //detail
+
+	Material* flagpole = AssetDatabase::LoadMaterial("flagpole");
+	sponza->connectMaterial(flagpole, 259); //flagpole
+	sponza->connectMaterial(flagpole, 260); //flagpole
+	sponza->connectMaterial(flagpole, 261); //flagpole
+	sponza->connectMaterial(flagpole, 262); //flagpole
+	sponza->connectMaterial(flagpole, 263); //flagpole
+	sponza->connectMaterial(flagpole, 264); //flagpole
+	sponza->connectMaterial(flagpole, 265); //flagpole
+	sponza->connectMaterial(flagpole, 266); //flagpole
+	sponza->connectMaterial(flagpole, 267); //flagpole
+	sponza->connectMaterial(flagpole, 268); //flagpole
+	sponza->connectMaterial(flagpole, 269); //flagpole
+	sponza->connectMaterial(flagpole, 270); //flagpole
+	sponza->connectMaterial(flagpole, 271); //flagpole
+	sponza->connectMaterial(flagpole, 272); //flagpole
+	sponza->connectMaterial(flagpole, 273); //flagpole
+	sponza->connectMaterial(flagpole, 274); //flagpole
+	sponza->connectMaterial(flagpole, 290); //flagpole
+	sponza->connectMaterial(flagpole, 291); //flagpole
+	sponza->connectMaterial(flagpole, 292); //flagpole
+	sponza->connectMaterial(flagpole, 293); //flagpole
+	sponza->connectMaterial(flagpole, 294); //flagpole
+	sponza->connectMaterial(flagpole, 295); //flagpole
+	sponza->connectMaterial(flagpole, 296); //flagpole
+	sponza->connectMaterial(flagpole, 297); //flagpole
+	sponza->connectMaterial(flagpole, 298); //flagpole
+	sponza->connectMaterial(flagpole, 299); //flagpole
+	sponza->connectMaterial(flagpole, 300); //flagpole
+	sponza->connectMaterial(flagpole, 301); //flagpole
+	sponza->connectMaterial(flagpole, 302); //flagpole
+	sponza->connectMaterial(flagpole, 303); //flagpole
+	sponza->connectMaterial(flagpole, 304); //flagpole
+	sponza->connectMaterial(flagpole, 305); //flagpole
+	sponza->connectMaterial(flagpole, 306); //flagpole
+	sponza->connectMaterial(flagpole, 307); //flagpole
+	sponza->connectMaterial(flagpole, 308); //flagpole
+	sponza->connectMaterial(flagpole, 309); //flagpole
+	sponza->connectMaterial(flagpole, 310); //flagpole
+	sponza->connectMaterial(flagpole, 311); //flagpole
+	sponza->connectMaterial(flagpole, 312); //flagpole
+	sponza->connectMaterial(flagpole, 313); //flagpole
+	sponza->connectMaterial(flagpole, 314); //flagpole
+	sponza->connectMaterial(flagpole, 315); //flagpole
+	sponza->connectMaterial(flagpole, 316); //flagpole
+	sponza->connectMaterial(flagpole, 317); //flagpole
+	sponza->connectMaterial(flagpole, 318); //flagpole
+	sponza->connectMaterial(flagpole, 319); //flagpole
+}
+
 void VulkanApp::initVulkan()
 {
 	createInstance();
@@ -166,7 +860,7 @@ void VulkanApp::initVulkan()
 	createGbuffers();
 	createSceneBuffer();
 
-	camera.setCamera(glm::vec3(0.0f, 3.0f, 15.0f), glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f, (float)WIDTH, (float)HEIGHT, NEAR_PLANE, FAR_PLANE);
+	camera.setCamera(glm::vec3(0.0f, 3.0f, 5.0f), glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f, (float)WIDTH, (float)HEIGHT, NEAR_PLANE, FAR_PLANE);
 	
 	//03. Create CommandPool
 	//[Stage] PreDraw 
@@ -185,21 +879,34 @@ void VulkanApp::initVulkan()
 	
 	PostProcess* HDRHighlightPostProcess = new PostProcess;
 
-	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 8, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 2, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
 	HDRHighlightPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	HDRHighlightPostProcess->createCommandPool();	
 	
 
 	PostProcess* HorizontalBlurPostProcess = new PostProcess;
-	HorizontalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	HorizontalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 2.0f, DOWNSAMPLING_BLOOM * 2.0f));
 	HorizontalBlurPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	HorizontalBlurPostProcess->createCommandPool();
 	
 	
 	PostProcess* VerticalBlurPostProcess = new PostProcess;
-	VerticalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	VerticalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 4.0f, DOWNSAMPLING_BLOOM * 4.0f));
 	VerticalBlurPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	VerticalBlurPostProcess->createCommandPool();
+
+
+	PostProcess* HorizontalBlurPostProcess2 = new PostProcess;
+	HorizontalBlurPostProcess2->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 8.0f, DOWNSAMPLING_BLOOM * 8.0f));
+	HorizontalBlurPostProcess2->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	HorizontalBlurPostProcess2->createCommandPool();
+
+
+	PostProcess* VerticalBlurPostProcess2 = new PostProcess;
+	VerticalBlurPostProcess2->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM  * 16.0f, DOWNSAMPLING_BLOOM  * 16.0f));
+	VerticalBlurPostProcess2->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VerticalBlurPostProcess2->createCommandPool();
+
 
 	PostProcess* LastPostProcess = new PostProcess;
 	LastPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f));
@@ -211,8 +918,13 @@ void VulkanApp::initVulkan()
 
 	postProcessStages.push_back(sceneStage);
 	postProcessStages.push_back(HDRHighlightPostProcess);
+
 	postProcessStages.push_back(HorizontalBlurPostProcess);
 	postProcessStages.push_back(VerticalBlurPostProcess);
+
+	postProcessStages.push_back(HorizontalBlurPostProcess2);
+	postProcessStages.push_back(VerticalBlurPostProcess2);
+
 	postProcessStages.push_back(LastPostProcess);
 
 	//[Stage] Frame buffer
@@ -224,9 +936,9 @@ void VulkanApp::initVulkan()
 
 	//[Lights]
 	DirectionalLight DL01;
-	DL01.lightInfo.lightColor = glm::vec4(1.0, 1.0, 1.0, 2.0);
+	DL01.lightInfo.lightColor = glm::vec4(1.0, 1.0, 1.0, 1.0);
 	DL01.lightInfo.lightPosition = glm::vec4(0.0);
-	DL01.lightDirection = glm::normalize(glm::vec3(1.0f, 1.0f, 1.0f));
+	DL01.lightDirection = glm::normalize(glm::vec3(1.0f, 2.0f, 1.0f));
 	directionLights.push_back(DL01);
 
 
@@ -236,90 +948,32 @@ void VulkanApp::initVulkan()
 	//[Geometries]
 	AssetDatabase::SetDevice(device, physicalDevice, deferredCommandPool, objectDrawQueue);
 	
+	/*
 	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Johanna.obj");
 	AssetDatabase::GetInstance()->geoList.push_back("objects/Johanna.obj");
 
 	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Chromie.obj");
 	AssetDatabase::GetInstance()->geoList.push_back("objects/Chromie.obj");
 	
-
 	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Cerberus/Cerberus.obj");
 	AssetDatabase::GetInstance()->geoList.push_back("objects/Cerberus/Cerberus.obj");
+	*/
+	//AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/sponza.obj");
+	//AssetDatabase::GetInstance()->geoList.push_back("objects/sponza.obj");
 
 	//[Textures] 
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_diff.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_d3crusaderf_base_diff.tga");
+	LoadTextures();
 
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_spec.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_d3crusaderf_base_spec.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_norm.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_d3crusaderf_base_norm.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_emis.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_d3crusaderf_base_emis.tga");
 	
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_diff.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_chromie_ultimate_diff.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_spec.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_chromie_ultimate_spec.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_norm.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_chromie_ultimate_norm.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_emis.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/storm_hero_chromie_ultimate_emis.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_A.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/Cerberus/Cerberus_A.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_S.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/Cerberus/Cerberus_S.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_N.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/Cerberus/Cerberus_N.tga");
-
-	AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_E.tga");
-	AssetDatabase::GetInstance()->textureList.push_back("textures/Cerberus/Cerberus_E.tga");
 
 
 
 
 	//[Materials]
 	//Object Materials
-	ObjectDrawMaterial* pMat = new ObjectDrawMaterial;
-	pMat->LoadFromFilename(device, physicalDevice, deferredCommandPool, objectDrawQueue, "standard_material");
-	pMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_diff.tga"));
-	pMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_spec.tga"));
-	pMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_norm.tga"));
-	pMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_d3crusaderf_base_emis.tga"));
-	pMat->setShaderPaths("shaders/shader.vert.spv", "shaders/shader.frag.spv", "");
-	pMat->createDescriptorSet();
+	LoadObjectMaterials();
 
-	materialManager.push_back(pMat);
-
-	ObjectDrawMaterial* pMat2 = new ObjectDrawMaterial;
-	pMat2->LoadFromFilename(device, physicalDevice, deferredCommandPool, objectDrawQueue, "standard_material2");
-	pMat2->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_diff.tga"));
-	pMat2->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_spec.tga"));
-	pMat2->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_norm.tga"));
-	pMat2->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/storm_hero_chromie_ultimate_emis.tga"));
-	pMat2->setShaderPaths("shaders/shader.vert.spv", "shaders/shader.frag.spv", "");
-	pMat2->createDescriptorSet();
-
-	materialManager.push_back(pMat2);
-
-	ObjectDrawMaterial* pMat3 = new ObjectDrawMaterial;
-	pMat3->LoadFromFilename(device, physicalDevice, deferredCommandPool, objectDrawQueue, "standard_material3");
-	pMat3->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_A.tga"));
-	pMat3->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_S.tga"));
-	pMat3->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_N.tga"));
-	pMat3->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>("textures/Cerberus/Cerberus_E.tga"));
-	pMat3->setShaderPaths("shaders/shader.vert.spv", "shaders/shader.frag.spv", "");
-	pMat3->createDescriptorSet();
-
-	materialManager.push_back(pMat3);
+	
 
 	//Global Materials
 	lightingMaterial = new LightingMaterial;	
@@ -351,16 +1005,36 @@ void VulkanApp::initVulkan()
 	horizontalMaterial = new BlurMaterial;
 	horizontalMaterial->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess->commandPool, postProcessQueue, "horizontalBlur_material");
 	horizontalMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/horizontalBlur.frag.spv", "");
-	horizontalMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	horizontalMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM* 2.0f, DOWNSAMPLING_BLOOM* 2.0f));
 
 	HorizontalBlurPostProcess->material = horizontalMaterial;
 	
 	verticalMaterial = new BlurMaterial;
 	verticalMaterial->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess->commandPool, postProcessQueue, "verticalBlur_material");
 	verticalMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/verticalBlur.frag.spv", "");
-	verticalMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	verticalMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM* 4.0f, DOWNSAMPLING_BLOOM* 4.0f));
 	
 	VerticalBlurPostProcess->material = verticalMaterial;
+
+
+	horizontalMaterial2 = new BlurMaterial;
+	horizontalMaterial2->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess2->commandPool, postProcessQueue, "horizontalBlur2_material");
+	horizontalMaterial2->setShaderPaths("shaders/postprocess.vert.spv", "shaders/horizontalBlur.frag.spv", "");
+	horizontalMaterial2->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM * 8.0f, DOWNSAMPLING_BLOOM * 8.0f));
+
+	HorizontalBlurPostProcess2->material = horizontalMaterial2;
+
+	verticalMaterial2 = new BlurMaterial;
+	verticalMaterial2->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess2->commandPool, postProcessQueue, "verticalBlur2_material");
+	verticalMaterial2->setShaderPaths("shaders/postprocess.vert.spv", "shaders/verticalBlur.frag.spv", "");
+	verticalMaterial2->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM * 16.0f, DOWNSAMPLING_BLOOM * 16.0f));
+
+	VerticalBlurPostProcess2->material = verticalMaterial2;
+
+
+
+
+
 
 	lastPostProcessMaterial = new LastPostProcessgMaterial;
 	lastPostProcessMaterial->LoadFromFilename(device, physicalDevice, LastPostProcess->commandPool, postProcessQueue, "lastPostProcess_material");
@@ -381,32 +1055,52 @@ void VulkanApp::initVulkan()
 
 	//Create Objects
 	
-	Object obj01;
-	obj01.initiation("Johanna", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Johanna.obj"));
-	obj01.scale = glm::vec3(0.8f);
-	obj01.position = glm::vec3(0.0, 1.0, -2.0);
-	obj01.update();
-	obj01.connectMaterial(pMat);
+	
+	Object *obj01 = new Object;
+	
+	obj01->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Johanna.obj", 0, false);	
+	obj01->scale = glm::vec3(0.3f);
+	obj01->position = glm::vec3(-3.0, 0.0, -0.25);
+	obj01->update();	
+	obj01->bRoll = true;
+	obj01->connectMaterial(AssetDatabase::LoadMaterial("standard_material"), 0);
 	objectManager.push_back(obj01);
 	
-
-	Object obj02;
-	obj02.initiation("Chromie", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Chromie.obj"));
-	obj02.scale = glm::vec3(0.2f);
-	obj02.position = glm::vec3(0.0, 1.0, 2.0);
-	obj02.update();
-	obj02.connectMaterial(pMat2);
-	objectManager.push_back(obj02);
+	
+	Object *obj03 = new Object;
+	
+	obj03->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Cerberus/Cerberus.obj", 0, false);
+	obj03->scale = glm::vec3(4.0f);
+	obj03->position = glm::vec3(0.0, 3.0, -0.25);
+	obj03->update();
+	obj03->bRoll = true;
+	obj03->connectMaterial(AssetDatabase::LoadMaterial("standard_material3"), 0);
+	objectManager.push_back(obj03);
 	
 
-	Object obj03;
-	obj03.initiation("Cerberus", AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Cerberus/Cerberus.obj"));
-	obj03.scale = glm::vec3(10.0f);
-	obj03.position = glm::vec3(0.0, -1.0, 0.0);
-	obj03.update();
-	obj03.connectMaterial(pMat3);
-	objectManager.push_back(obj03);
+	Object *obj02 = new Object;
 
+	obj02->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Chromie.obj", 0, false);
+	obj02->scale = glm::vec3(0.1f);
+	obj02->position = glm::vec3(3.0, 0.0, -0.25);
+	obj02->update();
+	obj02->bRoll = true;
+	obj02->connectMaterial(AssetDatabase::LoadMaterial("standard_material2"), 0);
+	objectManager.push_back(obj02);
+
+	
+	Object *sponza = new Object;
+	
+	sponza->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/sponza.obj", -1, true);
+	sponza->scale = glm::vec3(0.01f);
+	sponza->position = glm::vec3(0.0, 0.0, 0.0);
+	sponza->update();
+	
+	ConnectSponzaMaterials(sponza);
+	
+	objectManager.push_back(sponza);
+	
+	
 
 	offScreenPlane = new singleTriangular;
 	offScreenPlane->LoadFromFilename(device, physicalDevice, frameBufferCommandPool, lightingQueue, "offScreenPlane");
@@ -489,7 +1183,18 @@ void VulkanApp::initVulkan()
 	verticalMaterial->connectRenderPass(VerticalBlurPostProcess->renderPass);
 	verticalMaterial->createGraphicsPipeline(glm::vec2(VerticalBlurPostProcess->pExtent2D->width, VerticalBlurPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
 	
-	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, VerticalBlurPostProcess->outputImageView, depthImageView);
+	horizontalMaterial2->setImageViews(VerticalBlurPostProcess->outputImageView, depthImageView);
+	horizontalMaterial2->createDescriptorSet();
+	horizontalMaterial2->connectRenderPass(HorizontalBlurPostProcess2->renderPass);
+	horizontalMaterial2->createGraphicsPipeline(glm::vec2(HorizontalBlurPostProcess2->pExtent2D->width, HorizontalBlurPostProcess2->pExtent2D->height), glm::vec2(0.0, 0.0));
+
+	verticalMaterial2->setImageViews(HorizontalBlurPostProcess2->outputImageView, depthImageView);
+	verticalMaterial2->createDescriptorSet();
+	verticalMaterial2->connectRenderPass(VerticalBlurPostProcess2->renderPass);
+	verticalMaterial2->createGraphicsPipeline(glm::vec2(VerticalBlurPostProcess2->pExtent2D->width, VerticalBlurPostProcess2->pExtent2D->height), glm::vec2(0.0, 0.0));
+
+
+	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, VerticalBlurPostProcess2->outputImageView, depthImageView);
 	lastPostProcessMaterial->createDescriptorSet();
 	lastPostProcessMaterial->connectRenderPass(LastPostProcess->renderPass);
 	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(LastPostProcess->pExtent2D->width, LastPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
@@ -499,7 +1204,7 @@ void VulkanApp::initVulkan()
 	//[debug]
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
-		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, HDRHighlightPostProcess->outputImageView);
+		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, VerticalBlurPostProcess2->outputImageView);
 		debugDisplayMaterials[i]->createDescriptorSet();
 		debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);
 	}
@@ -1179,7 +1884,7 @@ void VulkanApp::reCreateSwapChain()
 		for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 		{
 			debugDisplayMaterials[i]->vrMode = bVRmode;
-			debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[3]->outputImageView);
+			debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[5]->outputImageView);
 			debugDisplayMaterials[i]->updateDescriptorSet();
 			debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);
 		}
@@ -1224,8 +1929,21 @@ void VulkanApp::reCreateSwapChain()
 	verticalMaterial->connectRenderPass(postProcessStages[3]->renderPass);
 	verticalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[3]->pExtent2D->width, postProcessStages[3]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
+
+	horizontalMaterial2->vrMode = bVRmode;
+	horizontalMaterial2->setImageViews(postProcessStages[3]->outputImageView, depthImageView);
+	horizontalMaterial2->updateDescriptorSet();
+	horizontalMaterial2->connectRenderPass(postProcessStages[4]->renderPass);
+	horizontalMaterial2->createGraphicsPipeline(glm::vec2(postProcessStages[4]->pExtent2D->width, postProcessStages[4]->pExtent2D->height), glm::vec2(0.0, 0.0));
+
+	verticalMaterial2->vrMode = bVRmode;
+	verticalMaterial2->setImageViews(postProcessStages[4]->outputImageView, depthImageView);
+	verticalMaterial2->updateDescriptorSet();
+	verticalMaterial2->connectRenderPass(postProcessStages[5]->renderPass);
+	verticalMaterial2->createGraphicsPipeline(glm::vec2(postProcessStages[5]->pExtent2D->width, postProcessStages[5]->pExtent2D->height), glm::vec2(0.0, 0.0));
+
 	lastPostProcessMaterial->vrMode = bVRmode;
-	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, postProcessStages[3]->outputImageView, depthImageView);
+	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, postProcessStages[5]->outputImageView, depthImageView);
 	lastPostProcessMaterial->updateDescriptorSet();
 	lastPostProcessMaterial->connectRenderPass(postProcessStages[4]->renderPass);
 	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[4]->pExtent2D->width, postProcessStages[4]->pExtent2D->height), glm::vec2(0.0, 0.0));
@@ -1262,13 +1980,33 @@ void VulkanApp::createGbuffers()
 		
 		if (bVRmode)
 		{
-			createImage(swapChainExtent.width / 2, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+			if (i == NORMAL_COLOR)
+			{
+				createImage(swapChainExtent.width / 2, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+			}
+			else
+			{
+				createImage(swapChainExtent.width / 2, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+			}
+
+			
 		}
 		else
 		{
-			createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-				VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+			if (i == NORMAL_COLOR)
+			{
+				createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+			}
+			else
+			{
+				createImage(swapChainExtent.width, swapChainExtent.height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+					VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, gBufferImages[i], gBufferImageMemories[i]);
+			}
+
+			
 		}
 
 		
@@ -1297,7 +2035,12 @@ void VulkanApp::createImageViews()
 	//G-buffers
 	for (uint32_t i = 0; i < gBufferImages.size(); i++)
 	{
-		gBufferImageViews[i] = createImageView(gBufferImages[i], VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+		if (i == NORMAL_COLOR)
+		{
+			gBufferImageViews[i] = createImageView(gBufferImages[i], VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+		}
+		else
+			gBufferImageViews[i] = createImageView(gBufferImages[i], VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	sceneImageView = createImageView(sceneImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -1619,7 +2362,7 @@ void VulkanApp::createDeferredRenderPass()
 	specColorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 	VkAttachmentDescription normalColorAttachment = {};
-	normalColorAttachment.format = VK_FORMAT_R16G16B16A16_SFLOAT;
+	normalColorAttachment.format = VK_FORMAT_R32G32B32A32_SFLOAT;
 	normalColorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	normalColorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	normalColorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -1851,21 +2594,25 @@ void VulkanApp::createDeferredCommandBuffers()
 
 	for (size_t j = 0; j < objectManager.size(); j++)
 	{
-		Object thisObject = objectManager[j];
+		Object *thisObject = objectManager[j];
 
-		
-		vkCmdBindPipeline(deferredCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, thisObject.material->pipeline);
+		for (size_t k = 0; k < thisObject->geos.size(); k++)
+		{
+			{
+				vkCmdBindPipeline(deferredCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, thisObject->materials[k]->pipeline);
 
-		VkBuffer vertexBuffers[] = { thisObject.geo->vertexBuffer };
-		VkBuffer indexBuffer = thisObject.geo->indexBuffer;
-		VkDeviceSize offsets[] = { 0 };
+				VkBuffer vertexBuffers[] = { thisObject->geos[k]->vertexBuffer };
+				VkBuffer indexBuffer = thisObject->geos[k]->indexBuffer;
+				VkDeviceSize offsets[] = { 0 };
 
-		vkCmdBindDescriptorSets(deferredCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, thisObject.material->pipelineLayout, 0, 1, &thisObject.material->descriptorSet, 0, nullptr);
+				vkCmdBindDescriptorSets(deferredCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, thisObject->materials[k]->pipelineLayout, 0, 1, &thisObject->materials[k]->descriptorSet, 0, nullptr);
 
-		vkCmdBindVertexBuffers(deferredCommandBuffer, 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(deferredCommandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+				vkCmdBindVertexBuffers(deferredCommandBuffer, 0, 1, vertexBuffers, offsets);
+				vkCmdBindIndexBuffer(deferredCommandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-		vkCmdDrawIndexed(deferredCommandBuffer, static_cast<uint32_t>(thisObject.geo->indices.size()), 1, 0, 0, 0);
+				vkCmdDrawIndexed(deferredCommandBuffer, static_cast<uint32_t>(thisObject->geos[k]->indices.size()), 1, 0, 0, 0);
+			}
+		}
 	}
 
 	vkCmdEndRenderPass(deferredCommandBuffer);
@@ -2061,7 +2808,7 @@ void VulkanApp::createFrameBufferCommandBuffers()
 	}
 }
 
-void VulkanApp::drawFrame(float time)
+void VulkanApp::drawFrame(float deltaTime)
 {
 
 	uint32_t imageIndex;
@@ -2077,7 +2824,7 @@ void VulkanApp::drawFrame(float time)
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
-	updateUniformBuffers(0, time);
+	updateUniformBuffers(0, deltaTime);
 
 	//objectDrawQueue
 	VkSubmitInfo submitInfo = {};
@@ -2150,7 +2897,7 @@ void VulkanApp::drawFrame(float time)
 
 	if (bVRmode)
 	{
-		updateUniformBuffers(1, time);
+		updateUniformBuffers(1, deltaTime);
 
 		//objectDrawQueue
 		VkSubmitInfo submitInfo = {};
@@ -2275,10 +3022,14 @@ void VulkanApp::run()
 	cleanUp();
 }
 
+
+
 void VulkanApp::mainLoop()
 {
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
+
+		
 
 		currentTime = (double)time(NULL);
 
@@ -2299,7 +3050,9 @@ void VulkanApp::mainLoop()
 
 		deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - _oldTime).count() * 0.001f;
 
-		drawFrame(time);
+		
+		getAsynckeyState();
+		drawFrame((float)deltaTime);
 
 		_oldTime = currentTime;
 	}
@@ -2307,7 +3060,7 @@ void VulkanApp::mainLoop()
 	vkDeviceWaitIdle(device);
 }
 
-void VulkanApp::updateUniformBuffers(unsigned int EYE, float time)
+void VulkanApp::updateUniformBuffers(unsigned int EYE, float deltaTime)
 {
 	UniformBufferObject ubo = {};
 	
@@ -2338,29 +3091,26 @@ void VulkanApp::updateUniformBuffers(unsigned int EYE, float time)
 
 	for (size_t i = 0; i < objectManager.size(); i++)
 	{
-		Object thisObject = objectManager[i];
+		Object *thisObject = objectManager[i];
 
-
-		thisObject.UpdateOrbit(time * 20.0f, 0.0f, 0.0f);
-
-		ubo.modelMat = thisObject.modelMat;
-		ubo.modelViewProjMat = ubo.viewProjMat * thisObject.modelMat;
+		if(thisObject->bRoll)
+		thisObject->UpdateOrbit(deltaTime * 20.0f, 0.0f, 0.0f);
 		
+		ubo.modelMat = thisObject->modelMat;
+		ubo.modelViewProjMat = ubo.viewProjMat * thisObject->modelMat;
 
 		glm::mat4 A = ubo.modelMat;
 		A[3] = glm::vec4(0, 0, 0, 1);
-		/*
-		A[0][3] = 0.0;
-		A[1][3] = 0.0;
-		A[2][3] = 0.0;
-		A[3][3] = 1.0;
-		*/
-		ubo.InvTransposeMat = glm::transpose(glm::inverse(A));			
+		ubo.InvTransposeMat = glm::transpose(glm::inverse(A));
 
-		void* data;
-		vkMapMemory(device, thisObject.material->uniformBufferMemory, 0, sizeof(UniformBufferObject), 0, &data);
-		memcpy(data, &ubo, sizeof(UniformBufferObject));
-		vkUnmapMemory(device, thisObject.material->uniformBufferMemory);
+		for (size_t k = 0; k < thisObject->materials.size(); k++)
+		{
+			void* data;
+			vkMapMemory(device, thisObject->materials[k]->uniformBufferMemory, 0, sizeof(UniformBufferObject), 0, &data);
+			memcpy(data, &ubo, sizeof(UniformBufferObject));
+			vkUnmapMemory(device, thisObject->materials[k]->uniformBufferMemory);
+		}
+		
 	}
 
 	
@@ -2538,11 +3288,13 @@ void VulkanApp::cleanUpSwapChain()
 		materialManager[i]->cleanPipeline();
 	}
 
+	/*
 	lightingMaterial->cleanPipeline();
 	hdrHighlightMaterial->cleanPipeline();
 	horizontalMaterial->cleanPipeline();
 	verticalMaterial->cleanPipeline();
 	lastPostProcessMaterial->cleanPipeline();
+	*/
 
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
@@ -2561,7 +3313,7 @@ void VulkanApp::cleanUpSwapChain()
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
 		PostProcess* thisPostProcess = postProcessStages[i];
-
+		thisPostProcess->material->cleanPipeline();
 		vkDestroyRenderPass(device, thisPostProcess->renderPass, nullptr);
 	}
 
@@ -2581,10 +3333,20 @@ void VulkanApp::cleanUp()
 
 	AssetDatabase::GetInstance()->cleanUp();
 
+	for (size_t i = 0; i < objectManager.size(); i++)
+	{
+		delete objectManager[i];
+	}
+
 	delete lightingMaterial;
 	delete hdrHighlightMaterial;
+
 	delete horizontalMaterial;
 	delete verticalMaterial;
+
+	delete horizontalMaterial2;
+	delete verticalMaterial2;
+
 	delete lastPostProcessMaterial;
 	delete frameBufferMaterial;
 

@@ -32,6 +32,10 @@ layout(location = 3) out vec4 outEmissiveColor;
 
 void main() {
     outColor = texture(basicColorTexture, fragUV);
+
+	if(outColor.w < .1)
+		discard;
+
 	outSpecColor = texture(specularColorTexture, fragUV);
 
 	outNormal = texture(normalColorTexture, fragUV);
@@ -58,6 +62,8 @@ void main() {
 
 	outEmissiveColor = texture(emissiveColorTexture, fragUV);
 
+	
+
 
 	//UV temp
 	/*
@@ -66,6 +72,6 @@ void main() {
 	else
 		outColor.w = 0.0;
 	*/
-	outColor.w = fragUV.x;
-	outEmissiveColor.w = fragUV.y;
+	//outColor.w = fragUV.x;
+	outEmissiveColor.w = fragColor.z;
 }

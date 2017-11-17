@@ -4,13 +4,21 @@
 #include "tiny_obj_loader.h"
 #include "Asset.h"
 
-/*
+//#include "../actors/Camera.h"
+
+
 struct BoundingBox
 {
 	glm::vec3 Center;            // Center of the box.
 	glm::vec3 Extents;           // Distance from the center to each side.
+
+	glm::vec3 minPt;
+	glm::vec3 maxPt;
+
+	glm::vec3 Corners[8];
 };
-*/
+
+
 
 class Geo : public Asset
 {
@@ -18,10 +26,14 @@ public:
 	Geo();
 	~Geo();
 
-	virtual void LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam);
+	//virtual void LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam);
 
 	void loadGeometryFromFile(std::string path);
-	
+
+	void init(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam, bool needUflipCorrection);
+
+	void setGeometry(tinyobj::shape_t &shape);
+
 	void createVertexBuffer();
 	void createIndexBuffer();
 
@@ -31,6 +43,8 @@ public:
 	std::vector<glm::vec3> Vnormals;
 	std::vector<glm::vec2> Vuvs;
 	std::vector<Vertex> vertices;
+	std::vector<std::pair<int, int>> handness;
+
 	std::vector<unsigned int> indices;
 
 	VkBuffer vertexBuffer;
@@ -44,9 +58,24 @@ public:
 
 	void createTBN();
 	
-	
+	bool intesect(glm::mat4 mvpMat)
+	{
+		for (int i = 0; i < 8; i++)
+		{
+			glm::vec4 temp = mvpMat * glm::vec4(AABB.Corners[i], 1.0f);
+			temp /= temp.w;
+
+			if (glm::abs(temp.x) < 1.0f && glm::abs(temp.y) < 1.0f && (temp.z > 0.0f &&  temp.z < 1.0f))
+				return true;
+		}
+
+		return false;
+	}
+	BoundingBox AABB;
+
 private:
 
+	bool UflipCorrection;
 	
 };
 

@@ -8,7 +8,7 @@
 #include "PostProcess.h"
 #include "../assets/Material.h"
 #include "../assets/Geometry.h"
-
+#include "../actors/Object.h"
 #include "../actors/Camera.h"
 #include "../actors/Light.h"
 
@@ -104,7 +104,7 @@ public:
 	void createDeferredCommandPool();
 	void createDeferredCommandBuffers();
 
-	void drawFrame(float time);
+	void drawFrame(float deltaTime);
 
 	void createSemaphores();
 
@@ -126,17 +126,26 @@ public:
 
 	void run();
 	
-	void updateUniformBuffers(unsigned int EYE, float time);
+	void updateUniformBuffers(unsigned int EYE, float deltaTime);
 
 	void mainLoop();
 
 	void cleanUp();
+
+	void getAsynckeyState();
 
 	VkDevice getDevice()
 	{
 		return device;
 	}
 	
+	void LoadTexture(std::string path);
+	void LoadTextures();
+
+	void LoadObjectMaterials();
+	void LoadObjectMaterial(std::string name, std::string albedo, std::string specular, std::string normal, std::string emissive);
+
+	void ConnectSponzaMaterials(Object* sponza);
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location,	int32_t code, const char* layerPrefix, const char* msg,	void* userData);
 	
@@ -195,6 +204,9 @@ private:
 
 	BlurMaterial *horizontalMaterial;
 	BlurMaterial *verticalMaterial;
+
+	BlurMaterial *horizontalMaterial2;
+	BlurMaterial *verticalMaterial2;
 
 	singleTriangular* offScreenPlane;
 

@@ -12,28 +12,38 @@ class Object : public Actor
 {
 public:
 	Object();
-	~Object();
-
-	void initiation(std::string objectNameParam, Geo* geoParam)
+	~Object()
 	{
-		objectName = objectNameParam;
-		geo = geoParam;
+		for (size_t i = 0; i < geos.size(); i++)
+		{
+			delete geos[i];
+		}
 	}
 
-	void addTexture(Texture* tex)
-	{
-		textures.push_back(tex);
-	}
+	void init(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam, int materialOffsetParam, bool needUflipCorrection);
 
-	void connectMaterial(Material* mat)
-	{
-		material = mat;
-	}
+	void loadObjectFromFile(std::string path);
 
-	Geo* geo;
-	Material* material;
-	std::vector<Texture*> textures;
+	void initiation(std::string objectNameParam, Geo* geoParam);
+
+	void connectMaterial(Material* mat, unsigned int matIndex);
+
+	std::vector<Geo*> geos;
+	std::vector<Material*> materials;
 	std::string objectName;
+
+
+	VkDevice device;
+	VkPhysicalDevice physicalDevice;
+	VkCommandPool commandPool;
+	VkQueue queue;
+
+	std::string path;
+
+	int materialOffset;
+
+	bool bRoll;
+	bool UflipCorrection;
 
 private:
 

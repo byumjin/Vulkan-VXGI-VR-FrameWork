@@ -23,8 +23,8 @@ layout(location = 1) in vec3 fragWorldPos;
 
 layout(location = 0) out vec4 outColor;
 
-vec4 uScale = vec4(0.6);
-vec4 uBias = vec4(-1.2);
+vec4 uScale = vec4(0.5);
+vec4 uBias = vec4(-1.0);
 
 int level = 0;
 

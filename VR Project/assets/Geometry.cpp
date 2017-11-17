@@ -1,6 +1,6 @@
 #include "Geometry.h"
 
-Geo::Geo()
+Geo::Geo():UflipCorrection(false)
 {
 }
 
@@ -9,7 +9,7 @@ Geo::~Geo()
 	cleanUp();
 }
 
-void Geo::LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam)
+void Geo::init(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkCommandPool commandPoolParam, VkQueue queueParam, std::string pathParam, bool needUflipCorrection)
 {
 	device = deviceParam;
 	physicalDevice = physicalDeviceParam;
@@ -18,16 +18,90 @@ void Geo::LoadFromFilename(VkDevice deviceParam, VkPhysicalDevice physicalDevice
 
 	path = pathParam;
 
-	loadGeometryFromFile(path);
+	UflipCorrection = needUflipCorrection;
+}
 
-	createTBN();
+void Geo::setGeometry(tinyobj::shape_t &shape)
+{
+	this->indices = shape.mesh.indices;
+	std::vector<float> &positions = shape.mesh.positions;
+	std::vector<float> &normals = shape.mesh.normals;
+	std::vector<float> &uvs = shape.mesh.texcoords;
 
-	createVertexBuffer();
-	createIndexBuffer();
+	for (unsigned int j = 0; j < positions.size() / 3; j++)
+	{
+		this->Vpositions.push_back(glm::vec3(positions[j * 3], positions[j * 3 + 1], positions[j * 3 + 2]));
+	}
+
+	for (unsigned int j = 0; j < normals.size() / 3; j++)
+	{
+		this->Vnormals.push_back(glm::vec3(normals[j * 3], normals[j * 3 + 1], normals[j * 3 + 2]));
+	}
+
+	for (unsigned int j = 0; j < uvs.size() / 2; j++)
+	{
+		this->Vuvs.push_back(glm::vec2(uvs[j * 2], 1.0 - uvs[j * 2 + 1]));
+	}
+	
+	this->numVetices = (unsigned int)this->Vpositions.size();
+
+	glm::vec3 maxCorner = glm::vec3(-FLT_MAX);
+	glm::vec3 minCorner = glm::vec3(FLT_MAX);;
+
+	for (unsigned int j = 0; j < this->numVetices; j++)
+	{
+		Vertex tempVertexInfo;
+		tempVertexInfo.positions = this->Vpositions[j];
+		tempVertexInfo.colors = glm::vec3(0.0f);
+
+		if (normals.size() == 0)
+			tempVertexInfo.normals = glm::vec3(0.0f, 0.0f, 1.0f);
+		else
+			tempVertexInfo.normals = this->Vnormals[j];
+
+		if (uvs.size() == 0)
+			tempVertexInfo.texcoords = glm::vec2(0.0f, 0.0f);
+		else
+			tempVertexInfo.texcoords = this->Vuvs[j];
+		
+		tempVertexInfo.tangents = glm::vec3(0.0f);
+		tempVertexInfo.bitangents = glm::vec3(0.0f);
+
+		this->vertices.push_back(tempVertexInfo);
+
+		maxCorner = glm::max(maxCorner, tempVertexInfo.positions);
+		minCorner = glm::min(minCorner, tempVertexInfo.positions);
+	}
+
+	
+	
+	AABB.maxPt = maxCorner;
+	AABB.minPt = minCorner;
+
+	AABB.Center = (maxCorner + minCorner) * 0.5f;
+	AABB.Extents = glm::abs(maxCorner - minCorner) * 0.5f;
+
+	AABB.Corners[0] = AABB.Center + glm::vec3(-AABB.Extents.x, -AABB.Extents.y, -AABB.Extents.z);
+	AABB.Corners[1] = AABB.Center + glm::vec3(AABB.Extents.x, -AABB.Extents.y, -AABB.Extents.z);
+	AABB.Corners[2] = AABB.Center + glm::vec3(-AABB.Extents.x, AABB.Extents.y, -AABB.Extents.z);
+	AABB.Corners[3] = AABB.Center + glm::vec3(-AABB.Extents.x, -AABB.Extents.y, AABB.Extents.z);
+
+	AABB.Corners[4] = AABB.Center + glm::vec3(AABB.Extents.x, AABB.Extents.y, -AABB.Extents.z);
+	AABB.Corners[5] = AABB.Center + glm::vec3(AABB.Extents.x, -AABB.Extents.y, AABB.Extents.z);
+	AABB.Corners[6] = AABB.Center + glm::vec3(-AABB.Extents.x, AABB.Extents.y, AABB.Extents.z);
+	AABB.Corners[7] = AABB.Center + glm::vec3(AABB.Extents.x, AABB.Extents.y, AABB.Extents.z);
+	
+
+	this->numTriangles = (unsigned int)this->indices.size() / 3;
 }
 
 void Geo::createTBN()
 {
+	std::pair<int, int> tempPair;
+	tempPair.first = -1;
+	tempPair.second = -1;
+	handness.resize(vertices.size(), tempPair);
+
 	for (size_t i = 0; i < numTriangles; i++)
 	{
 		glm::vec3 localPos[3];
@@ -73,9 +147,6 @@ void Geo::createTBN()
 			nor = glm::normalize(glm::cross(tan, bit));
 
 			// Calculate handedness
-			
-			//glm::vec3 fFaceNormal = glm::normalize(glm::cross(localPos[1] - localPos[0], localPos[2] - localPos[1]));
-
 			glm::vec3 fFaceNormal = glm::normalize(glm::cross(Pos2, Pos1));
 
 			//U flip
@@ -83,9 +154,203 @@ void Geo::createTBN()
 			{
 				tan = -(tan);
 
-				vertices[index01].colors = glm::vec4(1.0, 0.0, 0.0, 0.0);
-				vertices[index02].colors = glm::vec4(1.0, 0.0, 0.0, 0.0);
-				vertices[index03].colors = glm::vec4(1.0, 0.0, 0.0, 0.0);
+				if (handness[index01].first == -1)
+				{
+					handness[index01].first = 0;
+				}
+
+				if (handness[index02].first == -1)
+				{
+					handness[index02].first = 0;
+				}
+
+				if (handness[index03].first == -1)
+				{
+					handness[index03].first = 0;
+				}
+
+				if (handness[index01].first == 1)
+				{
+					//없으면 생성
+					if (handness[index01].second == -1)
+					{
+						vertices.push_back(vertices[index01]);
+
+						vertices[vertices.size() - 1].tangents = glm::vec3(0.0f);
+						vertices[vertices.size() - 1].bitangents = glm::vec3(0.0f);
+
+						std::pair<int, int> newHandness;
+						newHandness.first = 0;
+						newHandness.second = -1;
+						handness.push_back(newHandness);
+
+						handness[index01].second = (int)vertices.size() - 1;
+					}
+
+					//connect new indice
+					indices[3 * i] = handness[index01].second;
+					index01 = indices[3 * i];
+
+					vertices[index01].colors.y = 1.0f;
+				}
+
+				if (handness[index02].first == 1)
+				{
+					//없으면 생성
+					if (handness[index02].second == -1)
+					{
+						vertices.push_back(vertices[index02]);
+
+						vertices[vertices.size() - 1].tangents = glm::vec3(0.0f);
+						vertices[vertices.size() - 1].bitangents = glm::vec3(0.0f);
+
+						std::pair<int, int> newHandness;
+						newHandness.first = 0;
+						newHandness.second = -1;
+						handness.push_back(newHandness);
+
+						handness[index02].second = (int)vertices.size() - 1;
+					}
+
+					//connect new indice
+					indices[3 * i + 1] = handness[index02].second;
+					index02 = indices[3 * i + 1];
+
+					vertices[index02].colors.y = 1.0f;
+				}
+
+				if (handness[index03].first == 1)
+				{
+					//없으면 생성
+					if (handness[index03].second == -1)
+					{
+						vertices.push_back(vertices[index03]);
+
+						vertices[vertices.size() - 1].tangents = glm::vec3(0.0f);
+						vertices[vertices.size() - 1].bitangents = glm::vec3(0.0f);
+
+						std::pair<int, int> newHandness;
+						newHandness.first = 0;
+						newHandness.second = -1;
+						handness.push_back(newHandness);
+
+						handness[index03].second = (int)vertices.size() - 1;
+					}
+
+					//connect new indice
+					indices[3 * i + 2] = handness[index03].second;
+					index03 = indices[3 * i + 2];
+
+					vertices[index03].colors.y = 1.0f;
+				}
+
+				if (vertices[index01].colors.y == 1.0f || vertices[index02].colors.y == 1.0f || vertices[index03].colors.y == 1.0f)
+				{
+					vertices[index01].colors.y = 1.0f;
+					vertices[index02].colors.y = 1.0f;
+					vertices[index03].colors.y = 1.0f;
+				}
+
+				vertices[index01].colors.x = 1.0f;
+				vertices[index02].colors.x = 1.0f;
+				vertices[index03].colors.x = 1.0f;
+			}
+			else
+			{
+				if (handness[index01].first == -1)
+				{
+					handness[index01].first = 1;
+				}
+
+				if (handness[index02].first == -1)
+				{
+					handness[index02].first = 1;
+				}
+
+				if (handness[index03].first == -1)
+				{
+					handness[index03].first = 1;
+				}
+
+				if (handness[index01].first == 0)
+				{
+					//없으면 생성
+					if (handness[index01].second == -1)
+					{
+						vertices.push_back(vertices[index01]);
+
+						vertices[vertices.size() - 1].tangents = glm::vec3(0.0f);
+						vertices[vertices.size() - 1].bitangents = glm::vec3(0.0f);
+
+						std::pair<int, int> newHandness;
+						newHandness.first = 1;
+						newHandness.second = -1;
+						handness.push_back(newHandness);
+
+						handness[index01].second = (int)vertices.size() - 1;
+					}
+
+					//connect new indice
+					indices[3 * i] = handness[index01].second;
+					index01 = indices[3 * i];
+					vertices[index01].colors.z = 1.0f;
+				}
+
+				if (handness[index02].first == 0)
+				{
+					//없으면 생성
+					if (handness[index02].second == -1)
+					{
+						vertices.push_back(vertices[index02]);
+
+						vertices[vertices.size() - 1].tangents = glm::vec3(0.0f);
+						vertices[vertices.size() - 1].bitangents = glm::vec3(0.0f);
+
+						std::pair<int, int> newHandness;
+						newHandness.first = 1;
+						newHandness.second = -1;
+						handness.push_back(newHandness);
+
+						handness[index02].second = (int)vertices.size() - 1;
+					}
+
+					//connect new indice
+					indices[3 * i + 1] = handness[index02].second;
+					index02 = indices[3 * i + 1];
+					vertices[index02].colors.z = 1.0f;
+				}
+
+				if (handness[index03].first == 0)
+				{
+					//없으면 생성
+					if (handness[index03].second == -1)
+					{
+						vertices.push_back(vertices[index03]);
+
+						vertices[vertices.size() - 1].tangents = glm::vec3(0.0f);
+						vertices[vertices.size() - 1].bitangents = glm::vec3(0.0f);
+
+						std::pair<int, int> newHandness;
+						newHandness.first = 1;
+						newHandness.second = -1;
+						handness.push_back(newHandness);
+
+						handness[index03].second = (int)vertices.size() - 1;
+					}
+
+					//connect new indice
+					indices[3 * i + 2] = handness[index03].second;
+					index03 = indices[3 * i + 2];
+					vertices[index03].colors.z = 1.0f;
+				}
+
+
+				if (vertices[index01].colors.z == 1.0f || vertices[index02].colors.z == 1.0f || vertices[index03].colors.z == 1.0f)
+				{
+					vertices[index01].colors.z = 1.0f;
+					vertices[index02].colors.z = 1.0f;
+					vertices[index03].colors.z = 1.0f;
+				}
 			}
 
 			if (glm::dot(tan, bit) == 1.0f)
@@ -98,12 +363,6 @@ void Geo::createTBN()
 		else
 		{
 			continue;
-
-			/*
-			tan = glm::vec3(1.0f, 0.0f, 0.0f);
-			bit = glm::vec3(0.0f, 1.0f, 0.0f);
-			//nor = glm::vec3(0.0f, 0.0f, 1.0f);
-			*/
 		}		
 
 		
@@ -146,7 +405,7 @@ void Geo::createTBN()
 			nor = Nor[2];
 			BiTan[2] = glm::normalize(glm::cross(nor, Tan[2]));
 			Tan[2] = glm::normalize(glm::cross(BiTan[2], nor));
-		}
+		}		
 
 		vertices[index01].tangents += Tan[0];
 		vertices[index02].tangents += Tan[1];
@@ -159,19 +418,54 @@ void Geo::createTBN()
 		vertices[index03].bitangents += BiTan[2];
 	}
 
-	for (size_t i = 0; i < numVetices; i++)
+	for (size_t i = 0; i < vertices.size(); i++)
 	{
+		
 		if (glm::length(vertices[i].tangents) == 0.0f)
-			vertices[i].tangents = glm::vec3(1.0, 0.0, 0.0);
+		{
+			if (handness[i].first == 1)
+				vertices[i].tangents = glm::vec3(1.0, 0.0, 0.0);
+			else if (handness[i].first == 0)
+				vertices[i].tangents = glm::vec3(-1.0, 0.0, 0.0);
+			else
+			{
+				vertices[i].tangents = glm::vec3(1.0, 0.0, 0.0);
+			}
+
+		}
 
 		if (glm::dot(vertices[i].normals, glm::vec3(1.0, 0.0, 0.0)) == 1.0f && glm::dot(vertices[i].normals, vertices[i].tangents) > 0.9999f)
-			vertices[i].tangents = glm::vec3(0.0, 1.0, 0.0);
+		{
+			if(handness[i].first == 1)
+				vertices[i].tangents = glm::vec3(0.0, 0.0, -1.0);
+			else
+				vertices[i].tangents = glm::vec3(0.0, 0.0, 1.0);
+		}
+		else if (glm::dot(vertices[i].normals, glm::vec3(-1.0, 0.0, 0.0)) == 1.0f && glm::dot(vertices[i].normals, vertices[i].tangents) > 0.9999f)
+		{
+			if (handness[i].first == 1)
+				vertices[i].tangents = glm::vec3(0.0, 0.0, 1.0);
+			else
+				vertices[i].tangents = glm::vec3(0.0, 0.0, -1.0);
+		}
 
+		
+		
 
 		vertices[i].tangents = normalize(vertices[i].tangents);
+
+		if (UflipCorrection && vertices[i].colors.z == 1.0f)
+			vertices[i].tangents = -vertices[i].tangents;
+
 		vertices[i].bitangents = normalize(vertices[i].bitangents);
 
+		
+
 		glm::vec3 nor = vertices[i].normals;
+
+
+		
+
 		vertices[i].bitangents = glm::normalize(glm::cross(nor, vertices[i].tangents));
 		vertices[i].tangents = glm::normalize(glm::cross(vertices[i].bitangents, nor));
 	}
@@ -229,7 +523,7 @@ void Geo::loadGeometryFromFile(std::string path)
 					tempVertexInfo.normals = Vnormals[j];
 				
 				if (uvs.size() == 0)
-					tempVertexInfo.texcoords = glm::vec2(0.5f, 0.5f);
+					tempVertexInfo.texcoords = glm::vec2(0.0f, 0.0f);
 				else
 					tempVertexInfo.texcoords = Vuvs[j];
 
