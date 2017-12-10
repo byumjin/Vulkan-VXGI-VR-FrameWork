@@ -1,7 +1,4 @@
-Vulkan VR Framework with Voxel Cone-tracing Global Illumination 
-========================
-
-**University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project - Vulkan Vxgi Vr Engine**
+**University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project - Vulkan Vxgi VR Engine**
 
 * Byumjin Kim & Josh Lawrence 
 
