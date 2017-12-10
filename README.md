@@ -5,7 +5,11 @@
 
 # Overview
 
-벌칸을 이용하여 팀원 각자가 관심있는 것을 구현하기로 하였는데, 그 대상간의 관련성이 다르고, 규모도 한 달안에 한명이서 각자의 맡은 일을 마무리 하기에는 컸기때문에 대부분의 시간을 협업하는데 사용하지 못했다. 범진 킴은 기본 엔진 베이스와 VXGI [Interactive indirect illumination using voxel cone tracing](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.225.5903&rep=rep1&type=pdf). 를 조쉬는 VR 파트를 구현하여 Oculus HMD와 이 이프로젝를 연동시켰다.
+We have implemented Voxel Global illumination and VR pipeline with Vulkan for the final project of GPU programming.
+We have decided to use Vulcan to implement what each team member is interested in. 
+However, the relevance of the objects was too different each other, and the scale was too large to merge them in a given time.
+Thus, we could not use most of our time to collaborate.
+Byumjin Kim have taken to implement the engine base and VXGI which referred to [Interactive indirect illumination using voxel cone tracing](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.225.5903&rep=rep1&type=pdf), and Josh Lawrence have taken the VR mode and the part for interacting with Oculus HMD.
 
 ## Demo Video
 
@@ -14,10 +18,13 @@
 
 ## Deferred Rendering
 
-우리는 포스트 프로세스 이펙트들의 적용을 쉽게 만들어주는 디퍼드 렌더링을 기본 렌더링 방식으로 선택하였다. 네개의 G버퍼(알비도, 스펙큘러, 노멀, 에미시브)를 사용하여 PBR에 필요한 정보를 저장한다.
+We chose deferred rendering as our base rendering system, which makes it easier to apply post-process effects.
+It uses four G buffers (Albido, Specular, Normal and Emissive) to store information needed for PBR.
 
-![](img/VXGI/gbuffers.png)
-![](img/VXGI/gbufferstructure.png)
+| Debug display | G-buffer structure |
+| --- | --- |
+| ![](img/VXGI/gbuffers.png) | ![](img/VXGI/gbufferstructure.png) |
+
 
 ## HDR
 
@@ -25,47 +32,67 @@ HDR can represent a greater range of luminance levels than can be achieved using
 
 ### Bloom Effect
 
-우리는 가장 간다하면서도 효과적인 bloom effect를 위해 이 기능을 사용하였다. 먼저 scene image에서 아주 밝은 영역을 추출한 다음에, 컬러 scale 과 bias를 통해 원하는 이미지의 contrast를 얻는다.
 
-* Extracted HDR Color
-![](img/VXGI/hdr.png)
+I have used HDR for creating bloom effect the simplest and effective post-process effect.
+First, I extracted the very bright region from the scene image, then obtain the desired image contrast through color's scale and bias.
+
+| Extracted HDR Color |
+| --- |
+| ![](img/VXGI/hdr.png) |
 
 
- 그 후, two-passes seperable gaussian blur를 사용하여 bloom effect를 얻을 수 있다. 하지만, 일반적으로, 같은 해상도의 프레임 버퍼를 사용하면 커널의 크기가 만족할 만큼 크지가 않다. 이를 해결하기 위해, 블러를 실시하는 각 stage마다 1/2 다운샘플을 실시하여 블러 커널의 크기를 증가시켰다. 재밌는점은, 전통적인 프레그먼트 셰이더를 이용한 방법과 컴퓨트 셰이더(세어드 메모리 이용)를 이용한 방법을 둘다 사용해 보았는데, 기대와는 다르게 오히려 컴퓨트 셰이더 버전이 좀 더 느린 퍼포먼스를 보여주었다.
+After that, two-pass seperable gaussian blur can be used to obtain the bloom effect.
+However, typically, using a frame buffer of the same resolution is not large enough to get satisfied the size of the kernel.
+In order to solve this problem, the size of the blur kernel was increased by applying 1/2 down-sampling for each stage of blur.
 
-* Blurring with down-sampling
-![](img/VXGI/blur.png)
+The interesting point is, I've tried both the traditional fragment shader approach and the compute shader (using shared memory), but unlike the expectation, the compute shader version showed a slower performance.
+
+| 1/2 horizon blur | 1/4 vertical blur | 1/8 horizon blur | 1/8 vertical blur|
+| --- | --- | --- | --- |
+| ![](img/VXGI/down2.png) | ![](img/VXGI/down4.png) | ![](img/VXGI/down8.png) | ![](img/VXGI/down82.png) |
 
 
 ### Tone Mapping
 
-좀 더 실감나는 신을 얻기위해서는 Tone mapping 쉬우면서 가장 효과적인 방법이다. 먼저, 낮은 템퍼레이쳐 (3600K) 컬러 색상을 적용하여 새벽같은 느낌을 주었다. 그 후, 우리 scene의 contrast를 가장 강조하기에 효과적이었던, RomBinDaHouse Tone Mapping을 적용하였다.
 
-* Original Color
-![](img/VXGI/normal.png)
+Tone mapping is the easiest and most effective way to get a more realistic scene.
+First, I applied a low temperature color(3600K) to give a feeling of dawn.
+After that, applied RomBinDaHouse Tone Mapping, which was effective in highlighting the contrast of our scene.
 
-* After adjusting color temperature
-![](img/VXGI/temperature.png)
+| Original Color | Color temperature | RomBinDaHouse tone mapping |
+| --- | --- | --- |
+| ![](img/VXGI/normal.png) | ![](img/VXGI/temperature.png) | ![](img/VXGI/tonemapping.png) |
 
-* After adjusting RomBinDaHouse tone mapping
-![](img/VXGI/tonemapping.png)
 
 
 ## Voxel Global illumination
 
-우리는 Voxelizied 된 메쉬들에 cone tracing을 사용하여 GI를 얻는 Nvidia에서 발표된 Interactive indirect illumination using voxel cone tracing 논문을 참조하였다. 
+I referred to a paper [Interactive indirect illumination using voxel cone tracing](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.225.5903&rep=rep1&type=pdf) published in Nvidia, which uses Voxelizied meshes to obtain GI with using cone tracing.
 
 ### Voxelization
 
-먼저 복셀화 시킬 scene의 영역을 정하고, 그 안에 포함되는 오브젝트를 삼각형 단위로 복셀화 시킨다.  즉, geometry 셰이더에서 각 삼각형 마다 월드 x, y, z 축 중 project 시켰을 때 가장 넓은 면적을 제공하는 축을 사각형의 노멀벡터을 이용해 선택한 후, 그 축을 기준으로 투영시킨다. 그 후, conservative rasterization를 적용하여 missing 복셀을 방지한다. 마지막으로, 논문에서는 프래그먼트 셰이더에서 생성되는 프래그먼트만을 모아 프래그먼트 리스트를 생성하여 SVO를 구축하지만, 나는 간단히 3d texture를 사용하여 voxel들의 정보를 저장하였다. 
+First, the area of ​​the scene to be voxelized is determined, and the objects contained in the scene are voxelized into triangles.
+That is, in the geometry shader, an axis providing the widest area when each triangle is projected among the world x, y and z axis is selected using the normal vector of the rectangle, and the projection is performed based on the axis. Then, conservative rasterization is applied to prevent to generate missing voxels.
+Finally, in the paper, it constructs SVO by creating a fragment list by collecting fragments generated from a fragment shader, but I simply stored information of voxels using 3d texture, which has 512x512x512 resolution.
 
-![](img/VXGI/vx00.png)
+| Voxelized Meshes |
+| --- |
+| ![](img/VXGI/vx00.png) |
+
 
 ### Mip-Mapping
 
-생성된 3d texture는 voxel cone tracing을 위해 mip-mapped values를 단계별로 가져야 한다. OpenGL은 자동 밉맵 생성을 지원하지만, Vulkan을 그렇지 않기에 직접 수동적으로 해주어야 했다. 이를 위해 각 밉맵 단계별로 compute shader를 사용하여 새로운 밉맵을 레벨별로 생성하였다. 이 과정이 너무 느려서, 다이나믹한 3d texture mipmapping이 리얼타임상에서 불가능 하였기 때문에, 우리는 static한 오브젝트만 voxelization 시켜 GI를 얻어 올 수 밖에 없었다.
+ 
+The generated 3d texture should have mip-mapped values ​​step by step for voxel cone tracing.
+OpenGL supports automatic mipmap generation, but Vulkan is not, so I had to do it manually.
+To accomplish this, I used a compute shader for each mipmap stage to create a new mipmap by level.
+But, this process was so slow that dynamic 3d texture mipmapping was not possible in real time.
+So, I had to get GI by voxelizing from static objects only.
 
-![](img/VXGI/mipmap.png)
+| Mip level 0 | Mip level 1 | Mip level 2 | Mip level 3 |
+| --- | --- | --- | --- |
+| ![](img/VXGI/vx00.png) | ![](img/VXGI/vx01.png) | ![](img/VXGI/vx02.png) | ![](img/VXGI/vx03.png) |
+
 
 ### Voxel-Cone tracing
 
@@ -74,23 +101,25 @@ But, real voxel cone tracing is really slow in real-time.
 So, using with our voxel 3dtextures' mipmapped values, we can approximate this step with using ray marching with several samples from screen space world position.
 Depending on its sample distance, we can decide which mipmapped voxel values should be used.
 
-* Lighting Only
-![](img/VXGI/Lighting.png)
+And, before getting the sample color from the texture, determine whether the voxel is currently obscured by the shadow. 
+Because the voxel in the shadow cannot actually reflect any light.
+To obtain the diffuse GI, seven voxel cones of 60 degrees were used to cover the hemisphere area.
 
-* GI Only
-![](img/VXGI/GI.png)
+| GI Only |
+| --- |
+| ![](img/VXGI/GI.png) |
+
+One of the advantage of using voxel contracing is that we can get ambient occlusion free.
+
+| AO Only |
+| --- |
+| ![](img/VXGI/AO.png) |
 
 
-And, 텍스쳐에서 샘플 컬러를 가져오기 전에, 현재 그 복셀이 그림자에 가려져 있는지 아닌지의 여부를 파악한다. 왜냐하면, 그림자에 가져린 복셀은 사실 아무런 빛을 반사 할 수 없기 때문이다. 디퓨즈 GI를 갖고 오기 위하여, 60도의 복셀콘 7개를 사용하여 hemisphere 영역을 커버하였다. 한가지 좋은 점은, 이 복셀콘들을 그대로 이용하여 Ambient Occlusion 얻을 수 있다.
+| Light Only | Light + AO | Light + AO + GI |
+| --- |--- |--- |
+| ![](img/VXGI/Lighting.png) | ![](img/VXGI/L+AO.png) | ![](img/VXGI/L+AO+GI.png) |
 
-* AO Only
-![](img/VXGI/AO.png)
-
-* Lighting with AO
-![](img/VXGI/L+AO.png)
-
-* Lighting + GI with AO
-![](img/VXGI/L+AO+GI.png)
 
 
 
@@ -201,4 +230,22 @@ clock rate 1,097,5000<br />
 texture alignment 512<br />
 concurrent copy and execution yes<br />
 major.minor 5.0<br />
+
+
+# Credits: 
+
+* [Vulkan tutorial](https://vulkan-tutorial.com/Introduction)
+* [Tone mapping](https://www.shadertoy.com/view/lslGzl)
+* [Color Temperature](https://www.shadertoy.com/view/lsSXW1)
+
+
+# Libraries:
+
+* [tinyobjloader](https://github.com/syoyo/tinyobjloader)
+* [GLFW](http://www.glfw.org/)
+* [stb-image](https://github.com/nothings/stb)
+
+# Assets: 
+
+* [Cerberus by Andrew Maximov](http://artisaverb.info/Cerberus.html)
 
