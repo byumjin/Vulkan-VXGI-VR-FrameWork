@@ -30,26 +30,29 @@ HDR can represent a greater range of luminance levels than can be achieved using
 
 우리는 가장 간다하면서도 효과적인 bloom effect를 위해 이 기능을 사용하였다. 먼저 scene image에서 아주 밝은 영역을 추출한 다음에, 컬러 scale 과 bias를 통해 원하는 이미지의 contrast를 얻는다.
 
+* Extracted HDR Color
 ![](img/VXGI/hdr.png)
-<Extracted HDR Color>
+
 
  그 후, two-passes seperable gaussian blur를 사용하여 bloom effect를 얻을 수 있다. 하지만, 일반적으로, 같은 해상도의 프레임 버퍼를 사용하면 커널의 크기가 만족할 만큼 크지가 않다. 이를 해결하기 위해, 블러를 실시하는 각 stage마다 1/2 다운샘플을 실시하여 블러 커널의 크기를 증가시켰다. 재밌는점은, 전통적인 프레그먼트 셰이더를 이용한 방법과 컴퓨트 셰이더(세어드 메모리 이용)를 이용한 방법을 둘다 사용해 보았는데, 기대와는 다르게 오히려 컴퓨트 셰이더 버전이 좀 더 느린 퍼포먼스를 보여주었다.
 
+* Blurring with down-sampling
 ![](img/VXGI/blur.png)
-<Blurring with down-sampling>
+
 
 ### Tone Mapping
 
 좀 더 실감나는 신을 얻기위해서는 Tone mapping 쉬우면서 가장 효과적인 방법이다. 먼저, 낮은 템퍼레이쳐 (3600K) 컬러 색상을 적용하여 새벽같은 느낌을 주었다. 그 후, 우리 scene의 contrast를 가장 강조하기에 효과적이었던, RomBinDaHouse Tone Mapping을 적용하였다.
 
+* Original Color
 ![](img/VXGI/normal.png)
-<Original Color>
 
+* After adjusting color temperature
 ![](img/VXGI/temperature.png)
-<After adjusting color temperature>
 
+* After adjusting RomBinDaHouse tone mapping
 ![](img/VXGI/tonemapping.png)
-<After adjusting RomBinDaHouse tone mapping>
+
 
 ## Voxel Global illumination
 
@@ -74,22 +77,24 @@ But, real voxel cone tracing is really slow in real-time.
 So, using with our voxel 3dtextures' mipmapped values, we can approximate this step with using ray marching with several samples from screen space world position.
 Depending on its sample distance, we can decide which mipmapped voxel values should be used.
 
+* Lighting Only
 ![](img/VXGI/Lighting.png)
-<Lighting Only>
 
+* GI Only
 ![](img/VXGI/GI.png)
-<GI Only>
+
 
 And, 텍스쳐에서 샘플 컬러를 가져오기 전에, 현재 그 복셀이 그림자에 가려져 있는지 아닌지의 여부를 파악한다. 왜냐하면, 그림자에 가져린 복셀은 사실 아무런 빛을 반사 할 수 없기 때문이다. 디퓨즈 GI를 갖고 오기 위하여, 60도의 복셀콘 7개를 사용하여 hemisphere 영역을 커버하였다. 한가지 좋은 점은, 이 복셀콘들을 그대로 이용하여 Ambient Occlusion 얻을 수 있다.
 
+* AO Only
 ![](img/VXGI/AO.png)
-<AO Only>
 
+* Lighting with AO
 ![](img/VXGI/L+AO.png)
-<Lighting with AO>
 
+* Lighting + GI with AO
 ![](img/VXGI/L+AO+GI.png)
-<Lighting + GI with AO>
+
 
 
 ## VR mode
