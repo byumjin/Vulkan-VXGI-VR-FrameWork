@@ -155,16 +155,16 @@ One of the advantage of using voxel contracing is that we can get ambient occlus
 * A forth option avoids a post process by warping the NDC positions of the drawn meshes in the vertex shader and tesselating them. I belive this requires an art team to make sure this works out for every mesh. 
 * see: https://www.imgtec.com/blog/speeding-up-gpu-barrel-distortion-correction-in-mobile-vr/
 for reasons why the mesh needs to be dense enough (texture sampling gets funky because of Distortion model's nonlinearity. But if you subdivide enough, things approach linearity)
-![](SecondaryVR/img/nonstencil.png)
-![](SecondaryVR/img/aberration.png)
+![](img/VR/nonstencil.png)
+![](img/VR/aberration.png)
 
 
 ### Issues with finding inverse Brown-Conrady Distortion
 * I relied on the Secant Method for finding the inverse of non-invertable function in order to reverse warp the mesh in optios 2 and 3 above. 
 * However, you can run into root jumping issues, which I did but got around by letting the mesh position fall where it may recalculating its UV and finding the source UV from the normal Brown-conrady distortion. It's all pre-baked anyway so it doesnt matter it we take this extra step, just so long as the end result is correct.
-![](SecondaryVR/img/secantmethod.png)
-![](SecondaryVR/img/rootjumping.png)
-![](SecondaryVR/img/precalcmesh.png)
+![](img/VR/secantmethod.png)
+![](img/VR/rootjumping.png)
+![](img/VR/precalcmesh.png)
 
 ### Radial Density Masking
 * see https://www.youtube.com/watch?v=DdL3WC_oBO4
@@ -172,16 +172,16 @@ for reasons why the mesh needs to be dense enough (texture sampling gets funky b
 * Radial Density masking uses the stencil to cull 2x2 pixel quads in early-z to avoid rendering them in the fragment shader. 
 * The Mask is made by hand in code and uploaded to the stencil once and is used by the forward render pass (VR renderers need forward rendering because MSAA is such a huge win for image fidelity)
 * Masking is huge savings, about 20-25% off the top, the issue however is hole filling. Which can put you back where you started, it did for me.
-![](SecondaryVR/img/radialStencilMask.bmp)
-![](SecondaryVR/img/stencilMask1to1.png)
-![](SecondaryVR/img/stencilmask.png)
-![](SecondaryVR/img/holefill.png)
-![](SecondaryVR/img/all.png)
-![](SecondaryVR/img/debugHoleFill.png)
-![](SecondaryVR/img/noBarrelNoStencil.png)
-![](SecondaryVR/img/noBarrelStencilHoleFill.png)
-![](SecondaryVR/img/radialdensitymask.png)
-![](SecondaryVR/img/radialDensityMaskingWithTAA.png)
+![](img/VR/radialStencilMask.bmp)
+![](img/VR/stencilMask1to1.png)
+![](img/VR/stencilmask.png)
+![](img/VR/holefill.png)
+![](img/VR/all.png)
+![](img/VR/debugHoleFill.png)
+![](img/VR/noBarrelNoStencil.png)
+![](img/VR/noBarrelStencilHoleFill.png)
+![](img/VR/radialdensitymask.png)
+![](img/VR/radialDensityMaskingWithTAA.png)
 
 ### Optimizing Stencil Hole Fill
 * Remove all tex fetches from branches(needed for determining uv coords of fetches based on: 1. was it a ignored quad or not, 2: location withing quad), prefetch at the top of shader
@@ -191,9 +191,9 @@ for reasons why the mesh needs to be dense enough (texture sampling gets funky b
 * Yes, I thought it would be possible to just precalculate a stencil that masked out the places where the barrel filter wouldn't be sampling
 * The motivation for this was the expensive hole filling in radial density masking. 
 ** All color channels single pixel sample<br />
-![](SecondaryVR/img/preCalcBarrelSamplingMaskActualPixelsThatWillBeSampled.bmp)
+![](img/VR/preCalcBarrelSamplingMaskActualPixelsThatWillBeSampled.bmp)
 ** All color channels sample pixel quad <br />
-![](SecondaryVR/img/preCalcBarrelSamplingMaskActualPixelsThatWIllBeSampled_TheirQuads.bmp)
+![](img/VR/preCalcBarrelSamplingMaskActualPixelsThatWIllBeSampled_TheirQuads.bmp)
 
 
 ### Adaptive Quality Filtering
@@ -201,14 +201,14 @@ for reasons why the mesh needs to be dense enough (texture sampling gets funky b
 * Async time warp and space warp are unpleasent experiences for the user, should really only be last resort. If you're using it to maintain frame rate you're creating a really uncomfortable VR experience.
 * Use Adaptive quality filtering to detect when user is turning head towards an expensive view. If the last frame time starts go above some target threshold then begin to turn down settings (MSAA and virtual render target scaling (the render target size pre-barrel distortion))
 * Can probably avoid async time and space warp altogether.
-![](SecondaryVR/img/adaptiveQuality.bmp)
-![](SecondaryVR/img/adaptiveQualitySettings.png)
+![](img/VR/adaptiveQuality.bmp)
+![](img/VR/adaptiveQualitySettings.png)
 ** Resolution scale 1.5<br />
-![](SecondaryVR/img/adaptiveQuality1.5.png)
+![](img/VR/adaptiveQuality1.5.png)
 ** Resolution scale 1.0<br />
-![](SecondaryVR/img/adaptiveQuality1.0.png)
+![](img/VR/adaptiveQuality1.0.png)
 ** Resolution scale 0.5<br />
-![](SecondaryVR/img/adaptiveQuality0.5.png)
+![](img/VR/adaptiveQuality0.5.png)
 
 ### Asynchronous Time Warp (ATW)
 * In another thread, prepare last frame's final render target, depth buffer, and view matrix. If we are going to miss vsync with our current render task, prempt the gpu and warp old fragments into the new screen space using the updated viewproj and the old viewproj.
@@ -220,7 +220,7 @@ for reasons why the mesh needs to be dense enough (texture sampling gets funky b
 * Starts out normally with vr and radial density mask
 * Then enters time warp simulation mode where rendering is frozen. We take note of tripple buffer ID of last frame rendered as well as the camera state. 
 * Perform warping the previous fragments into the new screen space as described above
-![](SecondaryVR/img/timewarp.gif)
+![](img/VR/timewarp.gif)
 
 
 
@@ -235,10 +235,10 @@ for reasons why the mesh needs to be dense enough (texture sampling gets funky b
 
 ### Data
 **Performance of various Barrel/Chromatic Aberration Techniques and Radial Density Mask**<br />
-![](SecondaryVR/img/BarrelAberrationStencil.png)
+![](img/VR/BarrelAberrationStencil.png)
 
 **Push Constant vs UBO updates**<br />
-![](SecondaryVR/img/pushconstant.png)
+![](img/VR/pushconstant.png)
 
 
 **GPU Device Properties**<br />
