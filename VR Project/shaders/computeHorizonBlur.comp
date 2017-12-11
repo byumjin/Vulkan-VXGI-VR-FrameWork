@@ -1,0 +1,85 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_X_SIZE_MAX 1024
+#define WORKGROUP_Y_SIZE_MAX 1024
+
+layout(local_size_x = WORKGROUP_X_SIZE_MAX, local_size_y = 1, local_size_z = 1) in;
+
+layout(binding = 0) uniform sampler2D sceneMap;
+
+layout(set = 0, binding = 1) uniform UniformBufferObject
+{
+   mat4 modelMat;
+   mat4 viewMat;
+   mat4 projMat;  
+   mat4 viewProjMat;
+   mat4 InvViewProjMat;
+   mat4 modelViewProjMat;
+   mat4 InvTransposeMat;
+
+   vec3 cameraWorldPos;
+
+} ubo;
+
+layout(set = 0, binding = 2) uniform BlurUniformBufferObject
+{
+	float widthGap;
+	float heightGap;
+}bubo;
+
+// Read/write image format is flexible
+layout(set=0, binding = 3, rgba16f) uniform image2D outputTexture;
+
+
+shared vec4 SharedData[WORKGROUP_X_SIZE_MAX];
+
+void syncronize()
+{
+	memoryBarrierShared();
+	barrier();
+}
+
+//7 tap
+
+float weights[] = {0.2255859375,
+ 0.193359375,
+ 0.120849609375,
+ 0.0537109375,
+ 0.01611328125,
+ 0.0029296875,
+ 0.000244140625};
+ 
+
+//float weights[] = {0.14944598, 0.26836786, 0.1119264, 0.021803845, 0.00022119842, 0.000015124679, 0.00000011175871};
+//float gaps[] = {0.0, 1.4802548, 3.3333333, 5.2666667, 7.2, 9.1, 11.033333};
+
+
+void main() {
+		
+	uint height = gl_WorkGroupID.y;	
+	uint widthIndex = gl_LocalInvocationID.x;
+
+	if(widthIndex >= uint(bubo.widthGap))
+		return;
+
+	vec2 correctionVal = vec2(0.5 / bubo.widthGap, 0.5 / bubo.heightGap);
+
+	vec2 fragUV = vec2((float(widthIndex) - correctionVal.x)/(bubo.widthGap), (float(height) -  correctionVal.y)/(bubo.heightGap));
+
+	SharedData[widthIndex] = texture(sceneMap, fragUV);
+
+	syncronize();
+		
+	vec4 resultColor = SharedData[widthIndex] * weights[0];
+
+	for(int i=1; i<7; i++)
+	{
+		resultColor += SharedData[min(widthIndex + i, uint(bubo.widthGap) - 1)] * weights[i];
+		resultColor += SharedData[max(widthIndex - i, 0)] * weights[i];
+	}
+	
+	imageStore(outputTexture, ivec2(widthIndex,height), resultColor);		
+	
+}
+ 

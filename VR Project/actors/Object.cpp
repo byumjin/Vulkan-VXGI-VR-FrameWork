@@ -12,6 +12,8 @@ void Object::init(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, Vk
 	commandPool = commandPoolParam;
 	queue = queueParam;
 	path = pathParam;
+	
+	objectName = pathParam;
 
 	materialOffset = materialOffsetParam;
 
@@ -48,6 +50,8 @@ void Object::loadObjectFromFile(std::string path)
 			tempGeo->createIndexBuffer();
 			geos.push_back(tempGeo);
 		}
+
+		setAABB();
 	}
 }
 

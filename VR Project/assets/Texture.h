@@ -46,8 +46,9 @@ public:
 
 	int mipLevel;
 
-private:
+	
 
+private:
 	int texWidth, texHeight, texChannels;
 
 	VkBuffer stagingBuffer;
@@ -55,5 +56,6 @@ private:
 
 	VkImage textureImage;
 	VkDeviceMemory textureImageMemory;
+	
 };
 

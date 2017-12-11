@@ -48,17 +48,11 @@ void main() {
 	tbnMat[0] = fragTangent;
 	tbnMat[1] = fragBiTangent;
 	tbnMat[2] = fragNormal;
-		
-	//tbnMat[1] = normalize(cross(fragNormal, fragTangent));
-	//tbnMat[0] = normalize(cross(tbnMat[1], fragNormal));
-
 	
-	vec3 localNormal = tbnMat * tangentNormal;
-	//vec3 worldNormal = normalize( mat3(ubo.modelMat) * localNormal );
+	vec3 localNormal = tbnMat * tangentNormal;	
 	vec3 worldNormal = normalize( mat3(ubo.InvTransposeMat) * localNormal );
 
 	outNormal = vec4(worldNormal, outNormal.w);
-	//outNormal = vec4(fragTangent, outNormal.w);
 
 	outEmissiveColor = texture(emissiveColorTexture, fragUV);
 
@@ -73,5 +67,5 @@ void main() {
 		outColor.w = 0.0;
 	*/
 	//outColor.w = fragUV.x;
-	outEmissiveColor.w = fragColor.z;
+	outEmissiveColor.w = fragUV.y;
 }

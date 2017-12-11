@@ -1,0 +1,257 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_X_SIZE 1024
+
+layout(local_size_x = 8, local_size_y = 1, local_size_z = 1) in;
+
+
+layout(set = 0, binding = 0) buffer VoxelFragCount {
+ 	  uint fragCount;  
+};
+
+struct SVONode
+{
+	uint index;
+	uint parentIndex;	
+	uint level;	
+	uint fragListIndex;
+	uint fragListIndexArray[8];
+	uint childrenIndex[8];
+
+	vec4 centerPos;
+	vec4 albedo;
+	//vec4 padding[7];
+
+	//vec4 childrenPos[8];
+};
+
+layout(set = 0, binding = 1) buffer OctreeBuffer {
+ 	  SVONode Node[];  
+};
+
+struct FragmentListData
+{
+	vec4 data;
+};
+
+layout(set = 0, binding = 2) buffer VoxelPos {
+ 	  FragmentListData voxelPos[];  
+};
+
+layout(set = 0, binding = 3) uniform OctreeInitInfo
+{
+	uint voxelSize;
+  	uint maxLevel;	
+	uint currentIndex;		
+	uint currentLevel;		
+};
+
+struct SVOTagOutput
+{
+	uint numChild;  
+	uint parentIndex;  
+	uint endMemoryIndex;
+	uint padding;
+
+	uint childrenPlace[8];
+	
+	vec4 childrenCenterPos[8];
+
+	uint levelOffset[12];
+};
+
+
+volatile layout(set = 0, binding = 4) buffer NumChild {
+ 	  SVOTagOutput packedChildInfo;  
+};
+
+shared vec4 SharedData[8];
+
+vec4 getReturnPos(vec3 CenterPos, uint subNode , float halfLevelSize)
+{
+	float hh = halfLevelSize * 0.5;
+
+	if(subNode == 0)
+	{
+	    return vec4(CenterPos.x - hh, CenterPos.y - hh, CenterPos.z - hh, 1.0);
+	}
+	else if(subNode == 1)
+	{
+		return vec4(CenterPos.x + hh, CenterPos.y - hh, CenterPos.z - hh, 1.0);
+		
+	}
+	else if(subNode == 2)
+	{
+		return vec4(CenterPos.x - hh, CenterPos.y + hh, CenterPos.z - hh, 1.0);
+		
+	}
+	else if(subNode == 3)
+	{
+		return vec4(CenterPos.x + hh, CenterPos.y + hh, CenterPos.z - hh, 1.0);
+		
+	}
+	else if(subNode == 4)
+	{
+		return vec4(CenterPos.x - hh, CenterPos.y - hh, CenterPos.z + hh, 1.0);
+		
+	}
+	else if(subNode == 5)
+	{
+		return vec4(CenterPos.x + hh, CenterPos.y - hh, CenterPos.z + hh, 1.0);
+		
+	}
+	else if(subNode == 6)
+	{
+		return vec4(CenterPos.x - hh, CenterPos.y + hh, CenterPos.z + hh, 1.0);
+		
+	}
+	else if(subNode == 7)
+	{
+		return vec4(CenterPos.x + hh, CenterPos.y + hh, CenterPos.z + hh, 1.0);
+		
+	}
+	else
+	{
+		return vec4(-1.0);
+	}
+}
+
+void syncronize()
+{
+	memoryBarrierShared();
+	barrier();
+}
+
+/*
+
+void main()
+{
+	uint index =  gl_GlobalInvocationID.x;
+	//uint thredId =  gl_LocalInvocationID.x;
+
+
+	if(fragCount <= index)
+		return;
+
+	uint parentNodeIndex = currentIndex - index;
+
+	uint halfLevelSize = voxelSize/ uint(pow(2, currentLevel + 1));
+
+	syncronize();
+
+	//Allocation
+
+
+	for(uint thredId = 0; thredId<8; thredId++)
+	{
+		if( Node[parentNodeIndex].childrenIndex[thredId] >= 0x80000000  )
+		{
+			//uint nodeIndex = atomicAdd(packedChildInfo.endMemoryIndex, 1);
+
+			//uint nodeIndex = Node[parentNodeIndex].childrenIndex[thredId] & 0x7FFFFFFF;
+
+			uint nodeIndex = Node[parentNodeIndex].childrenIndex[thredId] - 0x80000000;
+
+
+			SVONode temp;
+
+			temp.index = nodeIndex;
+			temp.parentIndex = parentNodeIndex;
+			temp.level = Node[parentNodeIndex].level + 1;
+			temp.childrenIndex[thredId] = temp.index;
+
+			temp.centerPos = getReturnPos(Node[parentNodeIndex].centerPos.xyz, thredId, float(halfLevelSize));
+			
+
+			Node[parentNodeIndex].childrenIndex[thredId] = nodeIndex;	
+
+			Node[nodeIndex] = temp;
+
+			//Child init
+			for(uint g = 0; g<8; g++)
+			{
+				Node[nodeIndex].childrenIndex[g] = 0;
+				//Node[nodeIndex].childrenPos[g] = vec4(6969.0);
+			}		
+		
+		}
+
+		syncronize();
+	}
+
+	
+}
+
+*/
+
+void main()
+{
+	uint index = gl_LocalInvocationID.x;
+
+	uint nodeIndex = currentIndex;// & 0x7FFFFFFF;
+		
+	if(index < 8 )
+	{
+		
+		//It seems that it needs a bit delay
+		//Node[nodeIndex].fragListIndex = nodeIndex;	
+		//Node[nodeIndex].fragListIndex = 0;
+
+		
+		if( (Node[nodeIndex].childrenIndex[index] & 0x80000000) != 0 )	
+		{
+			//atomicAdd(packedChildInfo.numChild, 1);
+			SharedData[index] = packedChildInfo.childrenCenterPos[index];
+		}
+	}
+
+	syncronize();
+
+
+	//Allocation
+	if(index == 0 )
+	{
+		uint count = 0;
+		
+		for(uint f = 0; f < 8; f++)
+		{			
+			if( (Node[nodeIndex].childrenIndex[f] & 0x80000000) != 0)	
+			{
+				packedChildInfo.childrenPlace[count] = f;
+				packedChildInfo.childrenCenterPos[count] = SharedData[f];
+				count++;
+			}	
+		}
+
+		packedChildInfo.numChild = count;
+
+		packedChildInfo.parentIndex = nodeIndex;
+	}
+
+	syncronize();
+
+	//Init
+	if(index < packedChildInfo.numChild)
+	{
+		uint childIndex = packedChildInfo.endMemoryIndex + index;
+		Node[childIndex].index = childIndex;
+		Node[childIndex].parentIndex = packedChildInfo.parentIndex;
+		Node[childIndex].level = Node[packedChildInfo.parentIndex].level + 1;
+		Node[packedChildInfo.parentIndex].childrenIndex[ packedChildInfo.childrenPlace[index] ] = Node[childIndex].index;
+
+		Node[childIndex].centerPos = packedChildInfo.childrenCenterPos[index];
+		Node[childIndex].albedo = vec4(0.0);
+	}
+
+	syncronize();
+
+	if(index == 0 )
+	{
+		packedChildInfo.endMemoryIndex += packedChildInfo.numChild;
+	}
+	
+}
+
+
+

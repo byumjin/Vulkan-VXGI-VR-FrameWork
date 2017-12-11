@@ -20,6 +20,10 @@ layout(set = 0, binding = 5) uniform UniformBufferObject
 
 } ubo;
 
+layout(binding = 6) uniform sampler2D depthMap;
+layout(binding = 7) uniform sampler2D GIMap;
+layout(binding = 8) uniform sampler2D shadowMap;
+
 layout(location = 0) in vec2 fragUV;
 layout(location = 1) in vec3 fragWorldPos;
 

@@ -52,9 +52,17 @@ enum GBUFFER
 
 static bool bDeubDisply = false;
 static bool bVRmode = false;
+static bool bRotateMainLight = false;
+
+static int autoCameraMove = -1;
+
+static uint32_t drawMode = 4;
 
 #define LEFT_EYE 0
 #define RIGHT_EYE 1
 
 #define DOWNSAMPLING_BLOOM 2.0f
 
+#define WORKGROUP_X_SIZE_MAX 1024
+#define WORKGROUP_Y_SIZE_MAX 1024
+#define WORKGROUP_Z_SIZE_MAX 64

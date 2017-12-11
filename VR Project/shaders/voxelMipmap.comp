@@ -1,0 +1,132 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_X_SIZE 1024
+
+layout(local_size_x = WORKGROUP_X_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+
+layout(set = 0, binding = 0) buffer VoxelFragCount {
+ 	  uint fragCount;  
+};
+
+struct SVONode
+{
+	uint index;
+	uint parentIndex;	
+	uint level;	
+	uint fragListIndex;
+	uint fragListIndexArray[8];
+	uint childrenIndex[8];
+
+	vec4 centerPos;
+	vec4 albedo;
+	//vec4 padding[7];
+
+	//vec4 childrenPos[8];
+};
+
+layout(set = 0, binding = 1) buffer OctreeBuffer {
+ 	  SVONode Node[];  
+};
+
+struct FragmentListData
+{
+	vec4 data;
+};
+
+layout(set = 0, binding = 2) buffer VoxelPos {
+ 	  FragmentListData voxelPos[];  
+};
+
+layout(set = 0, binding = 3) uniform OctreeInitInfo
+{
+	uint voxelSize;
+  	uint maxLevel;	
+	uint currentIndex;		
+	uint currentLevel;		
+};
+
+struct SVOTagOutput
+{
+	uint numChild;  
+	uint parentIndex;  
+	uint endMemoryIndex;
+	uint padding;
+
+	uint childrenPlace[8];	
+	vec4 childrenCenterPos[8];
+
+	//Max is 512
+	uint levelOffset[12];
+
+};
+
+
+volatile layout(set = 0, binding = 4) buffer NumChild {
+ 	  SVOTagOutput packedChildInfo;  
+};
+
+layout(set = 0, binding = 5) buffer VoxelAlbedo {
+ 	  FragmentListData voxelAlbedo[];  
+};
+
+
+void syncronize()
+{
+	memoryBarrierShared();
+	barrier();
+}
+
+
+void main()
+{
+	uint index =  gl_GlobalInvocationID.x;
+
+
+	uint endIndex = packedChildInfo.levelOffset[currentLevel];
+	uint startIndex = packedChildInfo.levelOffset[currentLevel - 1];
+	uint count = endIndex - startIndex;
+	
+	uint nodeIndex = startIndex + index + 1;
+
+	if(currentLevel == 0)
+	{
+		count = 1;
+		nodeIndex = 0;
+
+	}
+
+	if(index < count )
+	{
+		
+
+		if(currentLevel == maxLevel)
+		{			
+			uint fraglist = Node[nodeIndex].fragListIndex;
+
+			for(uint i =0; i < fraglist; i++)
+			{
+				Node[nodeIndex].albedo += voxelAlbedo[Node[nodeIndex].fragListIndexArray[i]].data;
+			}			
+
+			Node[nodeIndex].albedo.w = float(fraglist);
+		}
+		else
+		{
+			for(uint i = 0; i<8; i++)
+			{
+				uint childIndex = Node[nodeIndex].childrenIndex[i];
+				if(childIndex > 0)
+				{				
+					Node[childIndex].albedo /= Node[childIndex].albedo.w;
+					Node[nodeIndex].albedo += Node[childIndex].albedo;
+				}
+			}
+			Node[nodeIndex].albedo /= Node[nodeIndex].albedo.w;
+		}
+	}
+}
+
+
+

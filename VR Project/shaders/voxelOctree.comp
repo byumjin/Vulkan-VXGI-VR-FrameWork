@@ -1,0 +1,125 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_X_SIZE 1024
+#define WORKGROUP_Y_SIZE 1024
+#define WORKGROUP_Z_SIZE 64
+
+layout(local_size_x = WORKGROUP_X_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+layout(set = 0, binding = 0) uniform OctreeInitInfo
+{
+	uint voxelSize;
+  	uint maxLevel;	
+	uint currentIndex;		
+	uint currentLevel;		
+};
+
+struct BoundBox
+{
+	vec4 bounds[2]; //min and max
+};
+
+struct OctreeNode
+{
+	uint index;
+	uint parentIndex;	
+	uint level; //3
+	uint workGroupID[3]; //6
+	uint childrenIndex[8]; //16 
+	uint padding[2];
+
+	BoundBox bb;
+	vec4 albedo;
+	
+};
+
+layout(set = 0, binding = 1) buffer OctreeBuffer {
+ 	  OctreeNode Node[];  
+};
+
+struct MemoryIndicator
+{	
+	uint endMemoryIndex;
+};
+
+
+volatile layout(set = 0, binding = 2) buffer MemoryIndicatorBuffer {
+ 	  MemoryIndicator memoryIndicator;  
+};
+
+layout(set = 0, binding = 3, rgba16f) uniform image3D albedo3DImage;
+
+void syncronize()
+{
+	memoryBarrier();
+	barrier();
+}
+
+uint FindValidAlbedoChild(ivec3 childWorkGroupID, uint parentIndex)
+{
+	vec4 albedo = imageLoad( albedo3DImage, childWorkGroupID);
+
+	if(albedo.w > 0.0)
+	{
+		uint childIndex = atomicAdd(memoryIndicator.endMemoryIndex, 1);
+
+		Node[childIndex].index = childIndex;
+		Node[childIndex].parentIndex = parentIndex;
+		Node[childIndex].level = Node[parentIndex].level + 1;
+
+		Node[childIndex].workGroupID[0] = childWorkGroupID.x;
+		Node[childIndex].workGroupID[1] = childWorkGroupID.y;
+		Node[childIndex].workGroupID[2] = childWorkGroupID.z;
+
+		Node[childIndex].albedo = albedo;
+
+
+		float width = float(voxelSize) / pow(2.0, currentLevel + 1);
+		float halfWidh = width * 0.5;
+		Node[childIndex].bb.bounds[0] = vec4( childWorkGroupID.x * width,  childWorkGroupID.y * width, childWorkGroupID.z * width, 0.0 );
+
+		Node[childIndex].bb.bounds[0] -= vec4(halfWidh, halfWidh, halfWidh, 0.0);
+
+		Node[childIndex].bb.bounds[1] = vec4( (childWorkGroupID.x + 1) * width,  (childWorkGroupID.y + 1) * width, (childWorkGroupID.z + 1) * width, 0.0 );
+
+		Node[childIndex].bb.bounds[1] -= vec4(halfWidh, halfWidh, halfWidh, 0.0);
+
+		return childIndex;
+	}
+
+	return 0;
+}
+
+
+void main()
+{	
+	uint index = gl_GlobalInvocationID.x;
+
+	//num of newNode
+	if(index >= currentIndex)
+		return;
+
+	ivec3 parentWorkGroupID;
+
+	uint parentIndex = currentLevel + index;
+
+	parentWorkGroupID.x = int(Node[parentIndex].workGroupID[0]);
+	parentWorkGroupID.y = int(Node[parentIndex].workGroupID[1]);
+	parentWorkGroupID.z = int(Node[parentIndex].workGroupID[2]);
+
+	syncronize();
+
+	Node[parentIndex].childrenIndex[0] = FindValidAlbedoChild( ivec3(parentWorkGroupID.x * 2, parentWorkGroupID.y * 2, parentWorkGroupID.z * 2), parentIndex);
+	Node[parentIndex].childrenIndex[1] = FindValidAlbedoChild( ivec3(parentWorkGroupID.x * 2 + 1, parentWorkGroupID.y * 2, parentWorkGroupID.z * 2), parentIndex);
+	Node[parentIndex].childrenIndex[2] = FindValidAlbedoChild( ivec3(parentWorkGroupID.x * 2, parentWorkGroupID.y * 2 + 1, parentWorkGroupID.z * 2), parentIndex);
+	Node[parentIndex].childrenIndex[3] = FindValidAlbedoChild( ivec3(parentWorkGroupID.x * 2, parentWorkGroupID.y * 2, parentWorkGroupID.z * 2 + 1), parentIndex);
+
+	Node[parentIndex].childrenIndex[4] = FindValidAlbedoChild( ivec3(parentWorkGroupID.x * 2, parentWorkGroupID.y * 2 + 1, parentWorkGroupID.z * 2 + 1), parentIndex);
+	Node[parentIndex].childrenIndex[5] = FindValidAlbedoChild( ivec3(parentWorkGroupID.x * 2 + 1, parentWorkGroupID.y * 2, parentWorkGroupID.z * 2 + 1), parentIndex);
+	Node[parentIndex].childrenIndex[6] = FindValidAlbedoChild( ivec3(parentWorkGroupID.x * 2 + 1, parentWorkGroupID.y * 2 + 1, parentWorkGroupID.z * 2), parentIndex);
+	Node[parentIndex].childrenIndex[7] = FindValidAlbedoChild( ivec3(parentWorkGroupID.x * 2 + 1, parentWorkGroupID.y * 2 + 1, parentWorkGroupID.z * 2 + 1), parentIndex);
+
+}
+
+

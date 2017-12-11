@@ -1,0 +1,306 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+#define WORKGROUP_X_SIZE 1024
+#define WORKGROUP_Y_SIZE 1024
+#define WORKGROUP_Z_SIZE 64
+
+layout(local_size_x = WORKGROUP_X_SIZE, local_size_y = 1, local_size_z = 1) in;
+
+
+layout(set = 0, binding = 0) buffer VoxelFragCount {
+ 	  uint fragCount;  
+};
+
+struct SVONode
+{
+	uint index;
+	uint parentIndex;	
+	uint level;	
+	uint fragListIndex;
+	uint fragListIndexArray[8];
+	uint childrenIndex[8];
+
+	vec4 centerPos;
+	vec4 albedo;
+	//vec4 padding[7];
+
+	//vec4 childrenPos[8];
+};
+
+layout(set = 0, binding = 1) buffer OctreeBuffer {
+ 	  SVONode Node[];  
+};
+
+struct FragmentListData
+{
+	vec4 data;
+};
+
+layout(set = 0, binding = 2) buffer VoxelPos {
+ 	  FragmentListData voxelPos[];  
+};
+
+layout(set = 0, binding = 3) uniform OctreeInitInfo
+{
+	uint voxelSize;
+  	uint maxLevel;	
+	uint currentIndex;		
+	uint currentLevel;		
+};
+
+struct SVOTagOutput
+{
+	uint numChild;  
+	uint parentIndex;  
+	uint endMemoryIndex;	
+	uint padding;
+
+	uint childrenPlace[8];    
+	vec4 childrenCenterPos[8];
+
+	uint levelOffset[12];
+};
+
+
+volatile layout(set = 0, binding = 4) buffer NumChild {
+ 	  SVOTagOutput packedChildInfo;  
+};
+
+layout(set = 0, binding = 5) buffer VoxelAlbedo {
+ 	  FragmentListData voxelAlbedo[];  
+};
+
+
+
+shared vec4 SharedData[8];
+
+bool isBound(vec3 voxelPos, vec3 centerPos, float halfLevelSize)
+{
+	if( (voxelPos.x > (centerPos.x - halfLevelSize)) && (voxelPos.x < (centerPos.x + halfLevelSize)) && 
+	(voxelPos.y > (centerPos.y - halfLevelSize)) && (voxelPos.y < (centerPos.y + halfLevelSize)) && 
+	(voxelPos.z > (centerPos.z - halfLevelSize)) && (voxelPos.z < (centerPos.z + halfLevelSize)) )
+	{
+		return true;
+	}
+	else 
+		return false;
+}
+
+uint passedSubNode(in vec3 voxelPos, in vec3 CenterPos, in float halfLevelSize, out vec3 returnedCenterPos)
+{
+	float hh = halfLevelSize * 0.5;
+
+	if(isBound(voxelPos, vec3(CenterPos.x - hh, CenterPos.y - hh, CenterPos.z - hh),  hh))
+	{
+	    returnedCenterPos = vec3(CenterPos.x - hh, CenterPos.y - hh, CenterPos.z - hh);
+		return 0;
+	}
+	else if(isBound(voxelPos, vec3(CenterPos.x + hh, CenterPos.y - hh, CenterPos.z - hh),  hh))
+	{
+		returnedCenterPos = vec3(CenterPos.x + hh, CenterPos.y - hh, CenterPos.z - hh);
+		return 1;
+	}
+	else if(isBound(voxelPos, vec3(CenterPos.x - hh, CenterPos.y + hh, CenterPos.z - hh),  hh))
+	{
+		returnedCenterPos = vec3(CenterPos.x - hh, CenterPos.y + hh, CenterPos.z - hh);
+		return 2;
+	}
+	else if(isBound(voxelPos, vec3(CenterPos.x + hh, CenterPos.y + hh, CenterPos.z - hh),  hh))
+	{
+		returnedCenterPos = vec3(CenterPos.x + hh, CenterPos.y + hh, CenterPos.z - hh);
+		return 3;
+	}
+	else if(isBound(voxelPos, vec3(CenterPos.x - hh, CenterPos.y - hh, CenterPos.z + hh),  hh))
+	{
+		returnedCenterPos = vec3(CenterPos.x - hh, CenterPos.y - hh, CenterPos.z + hh);
+		return 4;
+	}
+	else if(isBound(voxelPos, vec3(CenterPos.x + hh, CenterPos.y - hh, CenterPos.z + hh),  hh))
+	{
+		returnedCenterPos = vec3(CenterPos.x + hh, CenterPos.y - hh, CenterPos.z + hh);
+		return 5;
+	}
+	else if(isBound(voxelPos, vec3(CenterPos.x - hh, CenterPos.y + hh, CenterPos.z + hh),  hh))
+	{
+		returnedCenterPos = vec3(CenterPos.x - hh, CenterPos.y + hh, CenterPos.z + hh);
+		return 6;
+	}
+	else if(isBound(voxelPos, vec3(CenterPos.x + hh, CenterPos.y + hh, CenterPos.z + hh),  hh))
+	{
+		returnedCenterPos = vec3(CenterPos.x + hh, CenterPos.y + hh, CenterPos.z + hh);
+		return 7;
+	}
+	else
+	{
+		returnedCenterPos = vec3(-1.0);
+		return 999;
+	}
+}
+
+void syncronize()
+{
+	//memoryBarrierShared();
+	memoryBarrier();
+	barrier();
+}
+
+/*
+void main()
+{
+	uint index =  gl_GlobalInvocationID.x;
+
+	uint nodeIndex = currentIndex;// & 0x7FFFFFFF;
+
+	uint result;
+
+	packedChildInfo.numChild = 0;
+
+	if(index < 8)
+	{
+		packedChildInfo.childrenPlace[index] = 0;
+	}
+
+	syncronize();
+		
+	if(index < fragCount )
+	{
+		vec4 fragListPosData = voxelPos[index].data;
+
+		uint currentLevelSize = voxelSize;
+		uint halfLevelSize = currentLevelSize/ uint(pow(2, currentLevel + 1));
+
+		
+		if(currentLevel == maxLevel)
+		{			
+			if(fragListPosData == Node[nodeIndex].centerPos)
+			{
+				//atomicAdd(packedChildInfo.padding, 1);				
+				//Node[nodeIndex].fragListIndex = index;
+
+				Node[nodeIndex].albedo += 
+			}
+			
+			return;
+		}
+		else
+		{	
+			vec3 returnPos;		
+			result = passedSubNode( fragListPosData.xyz, Node[nodeIndex].centerPos.xyz, float(halfLevelSize), returnPos);
+			
+			//flagging
+
+			if(result < 8)
+			{
+
+				Node[nodeIndex].childrenIndex[result] = 0x80000000;
+
+				//Node[nodeIndex].childrenPos[result] = vec4(returnPos, 1.0);	
+				
+				//atomicAdd(packedChildInfo.padding, 1);			
+			}
+		}		
+	}
+	
+	syncronize();
+
+	
+	if(index == 0)
+	{
+		uint count = 0;
+		
+		for(uint f = 0; f < 8; f++)
+		{			
+			if( Node[nodeIndex].childrenIndex[f] == 0x80000000 )	
+			{
+				//packedChildInfo.childrenPlace[count] = f;
+				//packedChildInfo.childrenCenterPos[count] = SharedData[f];
+
+				//atomicAdd(packedChildInfo.padding, 1);	
+				
+				//MemoryPointer				
+				//Node[nodeIndex].childrenIndex[f] |= (packedChildInfo.endMemoryIndex & 0x7FFFFFFF);
+
+				Node[nodeIndex].childrenIndex[f] += packedChildInfo.endMemoryIndex ;
+
+				packedChildInfo.endMemoryIndex++;
+
+				count++;
+			}	
+		}
+
+		packedChildInfo.padding = count;
+
+		
+	}
+
+}
+*/
+
+
+
+
+
+void main()
+{
+	uint index =  gl_GlobalInvocationID.x;
+
+	uint nodeIndex = currentIndex;// & 0x7FFFFFFF;
+
+	uint result;
+
+	packedChildInfo.numChild = 0;
+
+	if(index < 8)
+	{
+		packedChildInfo.childrenPlace[index] = 0;
+	}
+
+	syncronize();
+		
+	if(index < fragCount )
+	{
+		vec4 fragListPosData = voxelPos[index].data;
+
+		uint currentLevelSize = voxelSize;
+		uint halfLevelSize = currentLevelSize/ uint(pow(2, currentLevel + 1));
+
+		
+		if(currentLevel == maxLevel)
+		{			
+			if(fragListPosData == Node[nodeIndex].centerPos)
+			{
+				//atomicAdd(packedChildInfo.padding, 1);				
+				
+				//Node[nodeIndex].fragListIndex = index;
+
+				//Just for atomic
+				uint oldVal = atomicAdd(Node[nodeIndex].fragListIndex, 1);
+				
+				if(oldVal < 8)
+					Node[nodeIndex].fragListIndexArray[oldVal] = index;
+
+				//Node[nodeIndex].albedo += voxelAlbedo[index].data;
+				//Node[nodeIndex].albedo.w = float(wVal);
+			}
+			
+			return;
+		}
+		else
+		{	
+			vec3 returnPos;		
+			result = passedSubNode( fragListPosData.xyz, Node[nodeIndex].centerPos.xyz, float(halfLevelSize), returnPos);
+			
+			//flagging
+
+			if(result < 8)
+			{
+				Node[nodeIndex].childrenIndex[result] |= 0x80000000;
+				packedChildInfo.childrenCenterPos[result] = vec4(returnPos, 1.0);
+				atomicAdd(packedChildInfo.padding, 1);	
+			}
+		}
+	}
+}
+
+

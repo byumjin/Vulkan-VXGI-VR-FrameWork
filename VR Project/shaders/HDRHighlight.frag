@@ -23,7 +23,7 @@ layout(location = 1) in vec3 fragWorldPos;
 
 layout(location = 0) out vec4 outColor;
 
-vec4 uScale = vec4(0.5);
+vec4 uScale = vec4(0.75);
 vec4 uBias = vec4(-1.0);
 
 int level = 0;
@@ -31,6 +31,6 @@ int level = 0;
 void main() {
 
 	//extract HDR color
-	outColor = max(vec4(0.0), min(textureLod(sceneMap, fragUV, level) + uBias, vec4(10.0))) * uScale;	
+	outColor = max(vec4(0.0), min(texture(sceneMap, fragUV) + uBias, vec4(5.0))) * uScale;	
 	
 }

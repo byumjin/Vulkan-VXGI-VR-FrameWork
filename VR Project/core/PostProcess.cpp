@@ -1,6 +1,7 @@
 #include "PostProcess.h"
 
-void PostProcess::Initialize(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkSurfaceKHR surfaceParam, VkExtent2D* extent2DParam, int LayerCountParam, uint32_t miplevelParam, glm::vec2 Scales)
+void PostProcess::Initialize(VkDevice deviceParam, VkPhysicalDevice physicalDeviceParam, VkSurfaceKHR surfaceParam, VkExtent2D* extent2DParam, int LayerCountParam, uint32_t miplevelParam, glm::vec2 Scales,
+	bool compute, unsigned int drawModeParam, uint32_t vertexSizeParam, bool bDepth, VkImageView depthImageParam)
 {
 	device = deviceParam;
 	physicalDevice = physicalDeviceParam;
@@ -13,6 +14,19 @@ void PostProcess::Initialize(VkDevice deviceParam, VkPhysicalDevice physicalDevi
 	widthScale = 1.0f / Scales.x;
 	heightScale = 1.0f / Scales.y;
 
+	isCSPostProcess = compute;
+
+	bActivate = true;
+
+	drawMode = drawModeParam;
+
+	vertexSize = vertexSizeParam;
+
+	NeedDepth = bDepth;
+
+	//vrMode = true;
+
+	//depthImageView = depthImageParam;
 }
 
 void PostProcess::createImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
@@ -20,8 +34,8 @@ void PostProcess::createImage(uint32_t width, uint32_t height, VkFormat format, 
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	imageInfo.imageType = VK_IMAGE_TYPE_2D;
-	imageInfo.extent.width = (uint32_t)(widthScale * pExtent2D->width);
-	imageInfo.extent.height = (uint32_t)(heightScale * pExtent2D->height);
+	imageInfo.extent.width = width;// (uint32_t)(widthScale * pExtent2D->width);
+	imageInfo.extent.height = height;// (uint32_t)(heightScale * pExtent2D->height);
 	imageInfo.extent.depth = 1;
 	imageInfo.mipLevels = miplevel;
 	imageInfo.arrayLayers = 1;
@@ -121,59 +135,116 @@ VkImageView PostProcess::createImageView(VkImage image, VkFormat format, VkImage
 
 void PostProcess::createRenderPass()
 {
-	VkAttachmentDescription colorAttachment = {};
-	colorAttachment.format = format;
-	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	//Subpasses and attachment references
-	VkAttachmentReference colorAttachmentRef = {};
-	colorAttachmentRef.attachment = 0;
-	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription subpass = {};
-	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
-	subpass.pColorAttachments = &colorAttachmentRef;
-	subpass.pDepthStencilAttachment = NULL;
-
-
-	std::array<VkSubpassDependency, 2> dependencies;
-
-	dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[0].dstSubpass = 0;
-	dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-	dependencies[1].srcSubpass = 0;
-	dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
-	dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-	dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
-
-	VkRenderPassCreateInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	renderPassInfo.attachmentCount = 1;
-	renderPassInfo.pAttachments = &colorAttachment;
-	renderPassInfo.subpassCount = 1;
-	renderPassInfo.pSubpasses = &subpass;
-	renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());;
-	renderPassInfo.pDependencies = dependencies.data();
-
-	if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+	if(!isCSPostProcess)
 	{
-		throw std::runtime_error("failed to create render pass!");
+		VkAttachmentDescription colorAttachment = {};
+		colorAttachment.format = format;
+		colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		//Subpasses and attachment references
+		VkAttachmentReference colorAttachmentRef = {};
+		colorAttachmentRef.attachment = 0;
+		colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+
+		VkAttachmentDescription depthAttachment = {};
+		depthAttachment.format = findDepthFormat();
+		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // We will read from depth, so it's important to store the depth attachment results
+		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		depthAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL; // Attachment will be transitioned to shader read at render pass end
+
+		VkAttachmentReference depthAttachmentRef = {};
+		depthAttachmentRef.attachment = 1;
+		depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+
+		VkSubpassDescription subpass = {};
+		subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		subpass.colorAttachmentCount = 1;
+		subpass.pColorAttachments = &colorAttachmentRef;
+		
+		
+		if(NeedDepth)
+			subpass.pDepthStencilAttachment = &depthAttachmentRef;
+		else
+			subpass.pDepthStencilAttachment = NULL;
+		
+
+
+		std::array<VkSubpassDependency, 2> dependencies;
+
+		dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[0].dstSubpass = 0;
+		dependencies[0].srcStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[0].srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+		
+		if(NeedDepth)
+			dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		else
+			dependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		
+
+		dependencies[0].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		dependencies[1].srcSubpass = 0;
+		dependencies[1].dstSubpass = VK_SUBPASS_EXTERNAL;
+		dependencies[1].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		dependencies[1].dstStageMask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+		
+		if (NeedDepth)
+			dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		else
+			dependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		
+
+		dependencies[1].dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		dependencies[1].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+
+		VkRenderPassCreateInfo renderPassInfo = {};
+		
+		std::array<VkAttachmentDescription, 2> attachments = { colorAttachment, depthAttachment };
+
+		if (NeedDepth)
+		{
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+			renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+			renderPassInfo.pAttachments = attachments.data();
+			renderPassInfo.subpassCount = 1;
+			renderPassInfo.pSubpasses = &subpass;
+			renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
+			renderPassInfo.pDependencies = dependencies.data();
+		}
+		else
+		{
+			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+			renderPassInfo.attachmentCount = 1;
+			renderPassInfo.pAttachments = &colorAttachment;
+			renderPassInfo.subpassCount = 1;
+			renderPassInfo.pSubpasses = &subpass;
+			renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());;
+			renderPassInfo.pDependencies = dependencies.data();
+		}	
+		
+		if (vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
+		{
+			throw std::runtime_error("failed to create render pass!");
+		}
 	}
+
+	
 }
 
 void PostProcess::createFramebuffer()
@@ -181,11 +252,24 @@ void PostProcess::createFramebuffer()
 	VkFramebufferCreateInfo fbufCreateInfo = {};
 	fbufCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	fbufCreateInfo.pNext = NULL;
-	fbufCreateInfo.renderPass = renderPass;
-	fbufCreateInfo.pAttachments = &outputImageView;
-	fbufCreateInfo.attachmentCount = 1;
+	fbufCreateInfo.renderPass = renderPass;	
 
-	/*
+	std::array<VkImageView, 2> attachments = { outputImageView, depthImageView };
+
+	
+	if (NeedDepth)
+	{		
+		fbufCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+		fbufCreateInfo.pAttachments = attachments.data();
+		
+	}
+	else
+	{		
+		fbufCreateInfo.attachmentCount = 1;
+		fbufCreateInfo.pAttachments = &outputImageView;
+	}
+	
+
 	if (vrMode)
 	{
 		fbufCreateInfo.width = (uint32_t)(widthScale * pExtent2D->width * 0.5f);
@@ -194,9 +278,8 @@ void PostProcess::createFramebuffer()
 	{
 		fbufCreateInfo.width = (uint32_t)(widthScale * pExtent2D->width);
 	}
-	*/
+
 	
-	fbufCreateInfo.width = (uint32_t)(widthScale * pExtent2D->width);
 	fbufCreateInfo.height = (uint32_t)(heightScale * pExtent2D->height);
 	fbufCreateInfo.layers = LayerCount;
 
@@ -240,52 +323,79 @@ void PostProcess::createCommandBuffers()
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
 	vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	
 
-	std::array<VkClearValue, 1> clearValues = {};
-	clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-	VkRenderPassBeginInfo renderPassInfo = {};
-	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassInfo.renderPass = renderPass;
-	renderPassInfo.framebuffer = frameBuffer;
-	renderPassInfo.renderArea.offset = { 0, 0 };
-
-	VkExtent2D extent2D;
-	/*
-	if (vrMode)
+	if (material->pipeline)
 	{
-		extent2D.width = (uint32_t)(widthScale * pExtent2D->width* 0.5f);
+		VkRenderPassBeginInfo renderPassInfo = {};
+		renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassInfo.renderPass = renderPass;
+		renderPassInfo.framebuffer = frameBuffer;
+		renderPassInfo.renderArea.offset = { 0, 0 };
+
+		VkExtent2D extent2D;
+
+		if (vrMode)
+		{
+			extent2D.width = (uint32_t)(widthScale * pExtent2D->width * 0.5f);
+		}
+		else
+		{
+			extent2D.width = (uint32_t)(widthScale * pExtent2D->width);
+		}
+
+		extent2D.height = (uint32_t)(heightScale * pExtent2D->height);
+		renderPassInfo.renderArea.extent = extent2D;
+	
+
+		std::array<VkClearValue, 2> clearValues = {};
+		clearValues[0].color = { 0.0f, 0.0f, 0.0f, 0.0f };
+		clearValues[1].depthStencil = { 1.0f, 0 };
+
+		
+		if (NeedDepth)
+		{
+			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+			renderPassInfo.pClearValues = clearValues.data();
+		}
+		else
+		{					
+			renderPassInfo.clearValueCount = 1;
+			renderPassInfo.pClearValues = &clearValues[0];
+		}
+
+		vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipeline);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 0, 1, &material->descriptorSet, 0, nullptr);
+
+		VkDeviceSize offsets[] = { 0 };
+
+		if (drawMode == 0)
+		{
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &material->vertexBuffer, offsets);
+			vkCmdDraw(commandBuffer, vertexSize, 1, 0, 0);
+		
+		}
+		else if (drawMode == 1)
+		{	
+
+			vkCmdBindVertexBuffers(commandBuffer, 0, 1, &offScreenPlane->vertexBuffer, offsets);
+			vkCmdBindIndexBuffer(commandBuffer, offScreenPlane->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+			vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(offScreenPlane->indices.size()), 1, 0, 0, 0);			
+		}
+
+		
+		vkCmdEndRenderPass(commandBuffer);
+
 	}
-	else
+	else if (material->computePipeline)
 	{
-		extent2D.width = (uint32_t)(widthScale * pExtent2D->width);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, material->computePipeline);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, material->pipelineLayout, 0, 1, &material->descriptorSet, 0, nullptr);
+		vkCmdDispatch(commandBuffer, material->computeDispatchSize.x, material->computeDispatchSize.y, material->computeDispatchSize.z);
 	}
-	*/
 
-	extent2D.width = (uint32_t)(widthScale * pExtent2D->width);
-	extent2D.height = (uint32_t)(heightScale * pExtent2D->height);
-
-	renderPassInfo.renderArea.extent = extent2D;
-
-	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
-	renderPassInfo.pClearValues = clearValues.data();
-
-	vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipeline);
-
-	VkBuffer vertexBuffers[] = { offScreenPlane->vertexBuffer };
-	VkBuffer indexBuffer = offScreenPlane->indexBuffer;
-	VkDeviceSize offsets[] = { 0 };
-
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material->pipelineLayout, 0, 1, &material->descriptorSet, 0, nullptr);
-
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-
-	vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(offScreenPlane->indices.size()), 1, 0, 0, 0);
-
-	vkCmdEndRenderPass(commandBuffer);
+	
 
 	if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
 		throw std::runtime_error("failed to record command buffer!");

@@ -66,6 +66,15 @@
     <ClCompile Include="core\PostProcess.cpp">
       <Filter>Core</Filter>
     </ClCompile>
+    <ClCompile Include="core\Voxelization.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Shadow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="core\OculusSDKClasses.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\VulkanApp.h">
@@ -118,6 +127,15 @@
     </ClInclude>
     <ClInclude Include="core\PostProcess.h">
       <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Voxelization.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Shadow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="core\OculusSDKClasses.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -190,5 +208,25 @@
     <CustomBuild Include="shaders\lastPostProcess.frag">
       <Filter>Shaders</Filter>
     </CustomBuild>
+    <CustomBuild Include="shaders\BarrelAndAberrationPostProcess.frag" />
+    <CustomBuild Include="shaders\computeVerticalBlur.comp" />
+    <CustomBuild Include="shaders\computeHorizonBlur.comp" />
+    <CustomBuild Include="shaders\voxelization.frag" />
+    <CustomBuild Include="shaders\voxelization.vert" />
+    <CustomBuild Include="shaders\voxelization.geom" />
+    <CustomBuild Include="shaders\voxelRender.frag" />
+    <CustomBuild Include="shaders\voxelRender.geom" />
+    <CustomBuild Include="shaders\voxelRender.vert" />
+    <CustomBuild Include="shaders\voxelFragList.comp" />
+    <CustomBuild Include="shaders\voxelFragCount.comp" />
+    <CustomBuild Include="shaders\voxelTag.comp" />
+    <CustomBuild Include="shaders\voxelAlloc.comp" />
+    <CustomBuild Include="shaders\voxelMipmap.comp" />
+    <CustomBuild Include="shaders\voxel3DTexture.comp" />
+    <CustomBuild Include="shaders\voxelOctree.comp" />
+    <CustomBuild Include="shaders\voxelConeTracing.vert" />
+    <CustomBuild Include="shaders\voxelConeTracing.frag" />
+    <CustomBuild Include="shaders\standardShadowMap.frag" />
+    <CustomBuild Include="shaders\standardShadowMap.vert" />
   </ItemGroup>
 </Project>

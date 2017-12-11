@@ -1,8 +1,11 @@
+
+
+
 #include "VulkanApp.h"
 
 #include "../assets/AssetDatabase.h"
 
-
+using namespace OVR;
 void onWindowResized(GLFWwindow* window, int width, int height)
 {
 	if (width <= 0 || height <= 0)
@@ -10,7 +13,7 @@ void onWindowResized(GLFWwindow* window, int width, int height)
 	
 	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
 
-	camera.UpdateAspectRatio(float(width) / float(height));
+	camera.UpdateAspectRatio(static_cast<float>(width) / static_cast<float>(height));
 	app->reCreateSwapChain();
 }
 
@@ -64,7 +67,7 @@ void mouseMoveCallback(GLFWwindow* window, double xPosition, double yPosition)
 
 		double deltaZ = static_cast<float>((previousY - yPosition) * -sensitivity* deltaTime);
 
-		camera.UpdateOrbit(0.0f, 0.0f, (float)deltaZ);
+		camera.UpdateOrbit(0.0f, 0.0f, static_cast<float>(deltaZ));
 
 		previousY = yPosition;
 	}
@@ -72,11 +75,15 @@ void mouseMoveCallback(GLFWwindow* window, double xPosition, double yPosition)
 
 void mouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset)
 {
-	double sensitivity = 200.0;
+	
+	double sensitivity = 2.0;
 
-	double deltaZ = static_cast<float>(yoffset * -sensitivity * deltaTime);
+	float deltaZ = static_cast<float>(yoffset * -sensitivity * deltaTime);
 
-	camera.UpdateOrbit(0.0f, 0.0f, (float)deltaZ);
+	mainLightAngle += deltaZ;
+
+	VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+	app->swingMainLight();
 }
 
 void VulkanApp::getAsynckeyState()
@@ -85,45 +92,28 @@ void VulkanApp::getAsynckeyState()
 
 	if (glfwGetKey(window, GLFW_KEY_W) || glfwGetKey(window, GLFW_KEY_UP))
 	{
-		camera.UpdatePosition(0.0f, 0.0f, (float)(-sensitivity * deltaTime));
+		camera.UpdatePosition(0.0f, 0.0f, static_cast<float>(-sensitivity * deltaTime));
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_S) || glfwGetKey(window, GLFW_KEY_DOWN))
 	{
-		camera.UpdatePosition(0.0f, 0.0f, (float)(sensitivity* deltaTime));
+		camera.UpdatePosition(0.0f, 0.0f, static_cast<float>(sensitivity* deltaTime));
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT))
 	{
-		camera.UpdatePosition((float)(-sensitivity* deltaTime), 0.0f, 0.0f);
+		camera.UpdatePosition(static_cast<float>(-sensitivity* deltaTime), 0.0f, 0.0f);
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_D) || glfwGetKey(window, GLFW_KEY_RIGHT))
 	{
-		camera.UpdatePosition((float)(sensitivity* deltaTime), 0.0f, 0.0f);
+		camera.UpdatePosition(static_cast<float>(sensitivity* deltaTime), 0.0f, 0.0f);
 	}
+	queryHmdOrientationAndPosition();
 }
 
 void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-
-	
-
-	/*
-	double sensitivity = 100.0;
-		if(key == GLFW_KEY_W || key == GLFW_KEY_UP)
-			camera.UpdatePosition(0.0f, 0.0f, (float)(-sensitivity * deltaTime));
-		
-		if(key == GLFW_KEY_S || key == GLFW_KEY_DOWN)
-			camera.UpdatePosition(0.0f, 0.0f, (float)(sensitivity* deltaTime));
-		
-		if(key == GLFW_KEY_A || key == GLFW_KEY_LEFT)
-			camera.UpdatePosition((float)(-sensitivity* deltaTime), 0.0f, 0.0f);
-		
-		if(key == GLFW_KEY_D || key == GLFW_KEY_RIGHT)
-			camera.UpdatePosition((float)(sensitivity* deltaTime), 0.0f, 0.0f);
-	*/
-
 	if (action == GLFW_REPEAT || action == GLFW_PRESS)
 	{
 		if(key == GLFW_KEY_G)
@@ -144,14 +134,89 @@ void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int
 
 			app->reCreateSwapChain();
 		}
+
+		if (key == GLFW_KEY_R)
+		{
+			bRotateMainLight = !bRotateMainLight;			
+		}
+
+		if (key == GLFW_KEY_I)
+		{
+			autoCameraMove = autoCameraMove == 0 ? -1 : 0;
+		}
+
+		if (key == GLFW_KEY_K)
+		{
+			autoCameraMove = autoCameraMove == 1 ? -1 : 1;
+		}
+
+		if (key == GLFW_KEY_J)
+		{
+			autoCameraMove = autoCameraMove == 2 ? -1 : 2;
+		}
+
+		if (key == GLFW_KEY_L)
+		{
+			autoCameraMove = autoCameraMove == 3 ? -1 : 3;
+		}
+
+		if (key == GLFW_KEY_U)
+		{
+			autoCameraMove = autoCameraMove == 4 ? -1 : 4;
+		}
+
+		if (key == GLFW_KEY_O)
+		{
+			autoCameraMove = autoCameraMove == 5 ? -1 : 5;
+		}
+
+
+		if (key >= GLFW_KEY_1 && key <= GLFW_KEY_5)
+		{
+			drawMode = key - GLFW_KEY_1;
+			VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+			app->updateDrawMode();
+		}
+
+		if (key >= GLFW_KEY_F1 && key <= GLFW_KEY_F12)
+		{
+			VulkanApp* app = reinterpret_cast<VulkanApp*>(glfwGetWindowUserPointer(window));
+			app->switchTheLastPostProcess(7, key - GLFW_KEY_F1);
+			app->reCreateSwapChain();
+			
+		}
+
 	}
 
 	
 }
 
-//OCULUS res: 2160 1200
-VulkanApp::VulkanApp():WIDTH(800), HEIGHT(600), physicalDevice(VK_NULL_HANDLE), LayerCount(1)
+//OCULUS res: 2160 1200, halfres: 1080 600
+VulkanApp::VulkanApp():WIDTH(1080), HEIGHT(600), physicalDevice(VK_NULL_HANDLE), LayerCount(1)
 {
+
+	lightingMaterial = NULL;
+	hdrHighlightMaterial = NULL;
+
+	HBMaterial = NULL;
+	VBMaterial = NULL;;
+	HBMaterial2 = NULL;;
+	VBMaterial2 = NULL;
+
+	compHBMaterial = NULL;
+	compVBMaterial = NULL;
+	compHBMaterial2 = NULL;
+	compVBMaterial2 = NULL;
+
+	lastPostProcessMaterial = NULL;
+
+	
+	voxelRenderMaterial = NULL;
+
+	voxelConetracingMaterial = NULL;
+	BarrelAndAberrationPostProcessMaterial = NULL;
+
+	frameBufferMaterial = NULL;
 
 }
 
@@ -401,7 +466,7 @@ void VulkanApp::LoadObjectMaterial(std::string name, std::string albedo, std::st
 	tempMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>(specular));
 	tempMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>(normal));
 	tempMat->addTexture(AssetDatabase::GetInstance()->LoadAsset<Texture>(emissive));
-	tempMat->setShaderPaths("shaders/shader.vert.spv", "shaders/shader.frag.spv", "");
+	tempMat->setShaderPaths("shaders/shader.vert.spv", "shaders/shader.frag.spv", "", "", "", "");
 	tempMat->createDescriptorSet();
 
 	materialManager.push_back(tempMat);
@@ -455,14 +520,17 @@ void VulkanApp::ConnectSponzaMaterials(Object* sponza)
 	sponza->connectMaterial(chain, 331); //chain
 	sponza->connectMaterial(chain, 332); //chain
 	sponza->connectMaterial(chain, 333); //chain
+
 	sponza->connectMaterial(chain, 339); //chain
 	sponza->connectMaterial(chain, 340); //chain
 	sponza->connectMaterial(chain, 341); //chain
 	sponza->connectMaterial(chain, 342); //chain
+
 	sponza->connectMaterial(chain, 348); //chain
 	sponza->connectMaterial(chain, 349); //chain
 	sponza->connectMaterial(chain, 350); //chain
 	sponza->connectMaterial(chain, 351); //chain
+
 	sponza->connectMaterial(chain, 357); //chain
 	sponza->connectMaterial(chain, 358); //chain
 	sponza->connectMaterial(chain, 359); //chain
@@ -844,77 +912,290 @@ void VulkanApp::ConnectSponzaMaterials(Object* sponza)
 	sponza->connectMaterial(flagpole, 319); //flagpole
 }
 
-void VulkanApp::initVulkan()
-{
+void VulkanApp::initOVR() {
+	ovrResult result = ovr_Initialize(nullptr);
+	if (OVR_FAILURE(result))
+		return;
+
+
+	result = ovr_Create(&session, &luid);
+	if (OVR_FAILURE(result))
+	{
+		ovr_Shutdown();
+		return;
+	}
+
+	desc = ovr_GetHmdDesc(session);
+	resolution = desc.Resolution;
+
+    // Initialize eye rendering information.
+    // The viewport sizes are re-computed in case RenderTargetSize changed due to HW limitations.
+    g_EyeFov[0] = desc.DefaultEyeFov[0];
+    g_EyeFov[1] = desc.DefaultEyeFov[1];
+	camera.setHmdState(bRenderToHmd, g_EyeFov);
+
+	// Configure Stereo settings.
+	Sizei recommenedTex0Size = ovr_GetFovTextureSize(session, ovrEye_Left, g_EyeFov[0], 1.0f);
+	Sizei recommenedTex1Size = ovr_GetFovTextureSize(session, ovrEye_Right, g_EyeFov[1], 1.0f);
+	swapSize.w = recommenedTex0Size.w + recommenedTex1Size.w;
+	swapSize.h = glm::max(recommenedTex0Size.h, recommenedTex1Size.h);
+	swapExtent = { uint32_t(swapSize.w), uint32_t(swapSize.h) };
+
+	//get initial head pose
+	ovrTrackingState ts = ovr_GetTrackingState(session, ovr_GetTimeInSeconds(), ovrTrue);
+	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked))
+	{
+		ovrPosef pose = ts.HeadPose.ThePose;
+		Quatf poseQuat = pose.Orientation;
+		lastHmdPos = glm::vec3(pose.Position.x, pose.Position.y, pose.Position.z);
+		poseQuat.GetEulerAngles<OVR::Axis_Y, OVR::Axis_X, OVR::Axis_Z, OVR::RotateDirection::Rotate_CCW, OVR::HandedSystem::Handed_R>(&lastHmdEuler.y, &lastHmdEuler.x, &lastHmdEuler.z);
+	}
+}
+
+void VulkanApp::initOVRLayer() {
+	// Initialize VR structures, filling out description.
+	ovrEyeRenderDesc eyeRenderDesc[2];
+	ovrPosef      hmdToEyeViewPose[2];
+	ovrHmdDesc hmdDesc = ovr_GetHmdDesc(session);
+	eyeRenderDesc[0] = ovr_GetRenderDesc(session, ovrEye_Left, hmdDesc.DefaultEyeFov[0]);
+	eyeRenderDesc[1] = ovr_GetRenderDesc(session, ovrEye_Right, hmdDesc.DefaultEyeFov[1]);
+	hmdToEyeViewPose[0] = eyeRenderDesc[0].HmdToEyePose;
+	hmdToEyeViewPose[1] = eyeRenderDesc[1].HmdToEyePose;
+
+	// Initialize our single full screen Fov layer.
+	layer.Header.Type = ovrLayerType_EyeFov;
+	layer.Header.Flags = 0;
+	layer.ColorTexture[0] = textureSwapChain.textureChain;
+	layer.ColorTexture[1] = textureSwapChain.textureChain;
+	layer.Fov[0] = eyeRenderDesc[0].Fov;
+	layer.Fov[1] = eyeRenderDesc[1].Fov;
+	layer.Viewport[0] = Recti(0, 0, swapSize.w / 2, swapSize.h);
+	layer.Viewport[1] = Recti(swapSize.w / 2, 0, swapSize.w / 2, swapSize.h);
+	// ld.RenderPose and ld.SensorSampleTime are updated later per frame.
+}
+void VulkanApp::shutdownOVR() {
+	ovr_Destroy(session);
+	ovr_Shutdown();
+}
+
+void VulkanApp::queryHmdOrientationAndPosition() {
+	// Query the HMD for ts current tracking state.
+	ovrTrackingState ts = ovr_GetTrackingState(session, ovr_GetTimeInSeconds(), ovrTrue);
+
+
+	//
+	if (ts.StatusFlags & (ovrStatus_OrientationTracked | ovrStatus_PositionTracked))
+	{
+		ovrPosef pose = ts.HeadPose.ThePose;
+		Quatf poseQuat = pose.Orientation;
+		glm::vec3 currHmdPos(pose.Position.x, pose.Position.y, pose.Position.z);
+		glm::vec3 currHmdEuler;
+		poseQuat.GetEulerAngles<OVR::Axis_Y, OVR::Axis_X, OVR::Axis_Z, OVR::RotateDirection::Rotate_CCW, OVR::HandedSystem::Handed_R>(&currHmdEuler.y, &currHmdEuler.x, &currHmdEuler.z);
+		const glm::vec3 deltaHmdEuler = currHmdEuler - lastHmdEuler;
+		const glm::vec3 deltaHmdPos = currHmdPos - lastHmdPos;
+
+		// Call ovr_GetRenderDesc each frame to get the ovrEyeRenderDesc, as the returned values (e.g. hmdToEyePose) may change at runtime.
+		ovrEyeRenderDesc eyeRenderDesc[ovrEye_Count];
+		for (auto eye : { ovrEye_Left, ovrEye_Right })
+			eyeRenderDesc[eye] = ovr_GetRenderDesc(session, eye, desc.DefaultEyeFov[eye]);
+
+		// Get eye poses, feeding in correct IPD offset, the eye poses are relative to the hmd center( the head pose ), previously retrieved.
+		ovrPosef HmdToEyePose[ovrEye_Count] = { eyeRenderDesc[ovrEye_Left].HmdToEyePose,
+			eyeRenderDesc[ovrEye_Right].HmdToEyePose };
+		double sensorSampleTime = 20; // sensorSampleTime is fed into ovr_SubmitFrame later
+
+		//TODO: should use GetEyePoses but need to compile ovr lib with some other visual studio settings in order for the linker to not complain?
+		ovr_GetEyePoses(session, frameIndex, ovrTrue, HmdToEyePose, eyeRenderPose, &sensorSampleTime);
+		//if GetEyePoses works comment out the ori and pos assignments, leave the renderPose assignment
+		//eyeRenderPose[ovrEye_Left].Orientation = pose.Orientation;
+		//eyeRenderPose[ovrEye_Right].Orientation = pose.Orientation;
+		//eyeRenderPose[ovrEye_Left].Position.x = pose.Position.x + HmdToEyePose[ovrEye_Left].Position.x;
+		//eyeRenderPose[ovrEye_Left].Position.y = pose.Position.y + HmdToEyePose[ovrEye_Left].Position.y;
+		//eyeRenderPose[ovrEye_Left].Position.z = pose.Position.z + HmdToEyePose[ovrEye_Left].Position.z;
+		//eyeRenderPose[ovrEye_Right].Position.x = pose.Position.x + HmdToEyePose[ovrEye_Right].Position.x;
+		//eyeRenderPose[ovrEye_Right].Position.y = pose.Position.y + HmdToEyePose[ovrEye_Right].Position.y;
+		//eyeRenderPose[ovrEye_Right].Position.z = pose.Position.z + HmdToEyePose[ovrEye_Right].Position.z;
+		layer.RenderPose[ovrEye_Left] = eyeRenderPose[ovrEye_Left];
+		layer.RenderPose[ovrEye_Right] = eyeRenderPose[ovrEye_Right];
+		layer.SensorSampleTime = sensorSampleTime;
+
+		//if the above is figured out change HmdToEyePose to eyeRenderPose(although eyeRenderPose might be absolute pose in the future(ori, pos) not relative to current hmd head
+
+		camera.UpdateOrbitHmdVRSampleCode(eyeRenderPose);
+
+
+		//glm::vec3 relativeLeftPos(eyeRenderPose[ovrEye_Left].Position.x, eyeRenderPose[ovrEye_Left].Position.y, eyeRenderPose[ovrEye_Left].Position.z);
+		//glm::vec3 relativeRightPos(eyeRenderPose[ovrEye_Right].Position.x, eyeRenderPose[ovrEye_Right].Position.y, eyeRenderPose[ovrEye_Right].Position.z);
+		////glm::vec3 relativeLeftPos(HmdToEyePose[ovrEye_Left].Position.x, HmdToEyePose[ovrEye_Left].Position.y, HmdToEyePose[ovrEye_Left].Position.z);
+		////glm::vec3 relativeRightPos(HmdToEyePose[ovrEye_Right].Position.x, HmdToEyePose[ovrEye_Right].Position.y, HmdToEyePose[ovrEye_Right].Position.z);
+		//camera.UpdateOrbitHmdVR(deltaHmdEuler, deltaHmdPos, relativeLeftPos, relativeRightPos);
+
+		lastHmdPos = currHmdPos;
+		lastHmdEuler = currHmdEuler;
+	}
+
+
+}
+void VulkanApp::initVulkan() {
+	camera.setCamera(glm::vec3(0.0f, 3.0f, 5.0f), glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f, static_cast<float>(WIDTH), static_cast<float>(HEIGHT), NEAR_PLANE, FAR_PLANE);
+	initOVR();
+
 	createInstance();
 	setupDebugCallback();
 	createSurface();
-	pickPhysicalDevice();
+	//
+
+	if (bRenderToHmd)
+		ovr_GetSessionPhysicalDeviceVk(session, luid, instance, &physicalDevice);	
+	else
+		pickPhysicalDevice();
+
 	createLogicalDevice();
 
+	// Let the compositor know which queue to synchronize with
+	ovr_SetSynchonizationQueueVk(session, presentQueue);
+
 	//01. Create Swapchains
-	createSwapChain();
+	if (bRenderToHmd) {
+		swapChainImageFormat = oculusSwapFormat;
+		swapChainExtent = swapExtent;
+		createFrameBufferRenderPass();
+		oculusRenderPass.pass = frameBufferRenderPass;
+		textureSwapChain.Create(session, swapExtent, oculusRenderPass, VK_NULL_HANDLE, device);
+		//for (auto& tex : textureSwapChain.texElements) {
+		swapChainImages.resize(textureSwapChain.texElements.size());
+		swapChainImageViews.resize(textureSwapChain.texElements.size());
+		swapChainFramebuffers.resize(textureSwapChain.texElements.size());
+		for (int i = 0; i < textureSwapChain.texElements.size(); ++i) {
+			auto& tex = textureSwapChain.texElements[i];
+			swapChainImages[i]			= tex.image;
+			swapChainImageViews[i]		= tex.view;
+			swapChainFramebuffers[i]	= tex.fb.fb;
+		}
+		initOVRLayer();
+	} else {
+		createSwapChain();
+		createSwapChainImageViews();
+		createFrameBufferRenderPass();
+		createFramebuffers();
+	}
 
 
 	//02. Create GlobalImagebuffers
 	createGbuffers();
 	createSceneBuffer();
 
-	camera.setCamera(glm::vec3(0.0f, 3.0f, 5.0f), glm::vec3(0.0f, 3.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 45.0f, (float)WIDTH, (float)HEIGHT, NEAR_PLANE, FAR_PLANE);
 	
 	//03. Create CommandPool
 	//[Stage] PreDraw 
 	createDeferredCommandPool();
 
+	
+	standardShadow.Initialize(device, physicalDevice, surface, LayerCount, TagQueue, &objectManager);
+	standardShadow.setExtent(16384, 4096);
+	standardShadow.createImages(VK_FORMAT_R16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	standardShadow.createCommandPool();
+	
 
 	//[Stage] Post-process
+	PostProcess* VXGIPostProcess = new PostProcess;
+	VXGIPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f), false, DRAW_INDEX, 0, false, NULL);
+	VXGIPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VXGIPostProcess->createCommandPool();
+
 	PostProcess* sceneImageStage = new PostProcess;
-	sceneImageStage->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f));
+	sceneImageStage->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f), false, DRAW_INDEX, 0, false, NULL);
 	sceneImageStage->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	sceneImageStage->createCommandPool();
 
 	sceneStage = sceneImageStage;
-	//lastPostProcess = sceneImageStage;
-
 	
 	PostProcess* HDRHighlightPostProcess = new PostProcess;
 
-	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 2, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
+	HDRHighlightPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM), false, DRAW_INDEX, 0, false, NULL);
 	HDRHighlightPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	HDRHighlightPostProcess->createCommandPool();	
 	
 
 	PostProcess* HorizontalBlurPostProcess = new PostProcess;
-	HorizontalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 2.0f, DOWNSAMPLING_BLOOM * 2.0f));
+	HorizontalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 2.0f, DOWNSAMPLING_BLOOM * 2.0f), false, DRAW_INDEX, 0, false, NULL);
 	HorizontalBlurPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	HorizontalBlurPostProcess->createCommandPool();
-	
-	
+
+
 	PostProcess* VerticalBlurPostProcess = new PostProcess;
-	VerticalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 4.0f, DOWNSAMPLING_BLOOM * 4.0f));
+	VerticalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 4.0f, DOWNSAMPLING_BLOOM * 4.0f), false, DRAW_INDEX, 0, false, NULL);
 	VerticalBlurPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	VerticalBlurPostProcess->createCommandPool();
 
 
 	PostProcess* HorizontalBlurPostProcess2 = new PostProcess;
-	HorizontalBlurPostProcess2->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 8.0f, DOWNSAMPLING_BLOOM * 8.0f));
+	HorizontalBlurPostProcess2->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 8.0f, DOWNSAMPLING_BLOOM * 8.0f), false, DRAW_INDEX, 0, false, NULL);
 	HorizontalBlurPostProcess2->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	HorizontalBlurPostProcess2->createCommandPool();
 
 
 	PostProcess* VerticalBlurPostProcess2 = new PostProcess;
-	VerticalBlurPostProcess2->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM  * 16.0f, DOWNSAMPLING_BLOOM  * 16.0f));
+	VerticalBlurPostProcess2->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM  * 16.0f, DOWNSAMPLING_BLOOM  * 16.0f), false, DRAW_INDEX, 0, false, NULL);
 	VerticalBlurPostProcess2->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	VerticalBlurPostProcess2->createCommandPool();
 
+	/*
+	PostProcess* HorizontalBlurPostProcess = new PostProcess;
+	HorizontalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 2.0f, DOWNSAMPLING_BLOOM * 2.0f), true, DRAW_DISPATCH, 0, false, NULL);
+	HorizontalBlurPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	HorizontalBlurPostProcess->createCommandPool();
+	
+	
+	PostProcess* VerticalBlurPostProcess = new PostProcess;
+	VerticalBlurPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 4.0f, DOWNSAMPLING_BLOOM * 4.0f), true, DRAW_DISPATCH, 0, false, NULL);
+	VerticalBlurPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VerticalBlurPostProcess->createCommandPool();
 
+
+	PostProcess* HorizontalBlurPostProcess2 = new PostProcess;
+	HorizontalBlurPostProcess2->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM * 8.0f, DOWNSAMPLING_BLOOM * 8.0f), true, DRAW_DISPATCH, 0, false, NULL);
+	HorizontalBlurPostProcess2->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	HorizontalBlurPostProcess2->createCommandPool();
+
+
+	PostProcess* VerticalBlurPostProcess2 = new PostProcess;
+	VerticalBlurPostProcess2->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(DOWNSAMPLING_BLOOM  * 8.0f, DOWNSAMPLING_BLOOM  * 8.0f), true, DRAW_DISPATCH, 0, false, NULL);
+	VerticalBlurPostProcess2->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VerticalBlurPostProcess2->createCommandPool();
+	*/
+
+	
+
+	/*
+	PostProcess* VoxelRenderProcess = new PostProcess;
+	VoxelRenderProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f), false, DRAW_VERTEX, uint32_t(VOXEL_SIZE*VOXEL_SIZE*VOXEL_SIZE), true, NULL);
+	VoxelRenderProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	VoxelRenderProcess->createCommandPool();
+	*/
+
+	
+
+	
 	PostProcess* LastPostProcess = new PostProcess;
-	LastPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f));
+	LastPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f), false, DRAW_INDEX, 0, false, NULL);
 	LastPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	LastPostProcess->createCommandPool();
 
-	theLastPostProcess = LastPostProcess;
 
+	//VR BARREL AND ABERRATION
+	/*
+	PostProcess* BarrelAndAberrationPostProcess = new PostProcess;
+	BarrelAndAberrationPostProcess->Initialize(device, physicalDevice, surface, &swapChainExtent, LayerCount, 1, glm::vec2(1.0f, 1.0f), false, DRAW_INDEX, 0, false, NULL);
+	BarrelAndAberrationPostProcess->createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	BarrelAndAberrationPostProcess->createCommandPool();
+	*/
+	//!!! theLastPostProcess has to indicate the last post process, always !!!
+	//theLastPostProcess = VoxelRenderProcess;
+	theLastPostProcess = LastPostProcess;
+	//theLastPostProcess = LastPostProcess;
+
+	postProcessStages.push_back(VXGIPostProcess);
 
 	postProcessStages.push_back(sceneStage);
 	postProcessStages.push_back(HDRHighlightPostProcess);
@@ -924,8 +1205,15 @@ void VulkanApp::initVulkan()
 
 	postProcessStages.push_back(HorizontalBlurPostProcess2);
 	postProcessStages.push_back(VerticalBlurPostProcess2);
+	
+	//postProcessStages.push_back(VoxelRenderProcess);
+
+	
 
 	postProcessStages.push_back(LastPostProcess);
+
+	//VR BARREL AND ABERRATION
+	//postProcessStages.push_back(BarrelAndAberrationPostProcess);
 
 	//[Stage] Frame buffer
 	createFrameBufferCommandPool();
@@ -936,11 +1224,17 @@ void VulkanApp::initVulkan()
 
 	//[Lights]
 	DirectionalLight DL01;
+	//DL01.lightInfo.lightColor = glm::vec4(0.929412, 0.862745, 0.650980, 1.0);
 	DL01.lightInfo.lightColor = glm::vec4(1.0, 1.0, 1.0, 1.0);
-	DL01.lightInfo.lightPosition = glm::vec4(0.0);
-	DL01.lightDirection = glm::normalize(glm::vec3(1.0f, 2.0f, 1.0f));
-	directionLights.push_back(DL01);
+	DL01.lightInfo.focusPosition = glm::vec4(-0.5, 14.5, -0.4, 1.0);
+	//DL01.lightInfo.lightPosition = glm::vec4(-0.5, 14.5, -0.5, 1.0);
 
+	DL01.lightInfo.lightPosition = glm::vec4(-0.5, 14.618034, -0.4, 1.0);
+	//DL01.lightDirection = glm::vec4(glm::normalize(glm::vec3(DL01.lightInfo.focusPosition) - glm::vec3(DL01.lightInfo.lightPosition)), 0.0);
+	//SetDirectionLightMatrices(DL01, 18.0f, 10.0f, 0.0f, 20.0f);
+
+	directionLights.push_back(DL01);
+	swingMainLight();
 
 
 	AssetDatabase::GetInstance();
@@ -948,25 +1242,9 @@ void VulkanApp::initVulkan()
 	//[Geometries]
 	AssetDatabase::SetDevice(device, physicalDevice, deferredCommandPool, objectDrawQueue);
 	
-	/*
-	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Johanna.obj");
-	AssetDatabase::GetInstance()->geoList.push_back("objects/Johanna.obj");
-
-	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Chromie.obj");
-	AssetDatabase::GetInstance()->geoList.push_back("objects/Chromie.obj");
-	
-	AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/Cerberus/Cerberus.obj");
-	AssetDatabase::GetInstance()->geoList.push_back("objects/Cerberus/Cerberus.obj");
-	*/
-	//AssetDatabase::GetInstance()->LoadAsset<Geo>("objects/sponza.obj");
-	//AssetDatabase::GetInstance()->geoList.push_back("objects/sponza.obj");
 
 	//[Textures] 
 	LoadTextures();
-
-	
-
-
 
 
 	//[Materials]
@@ -974,133 +1252,201 @@ void VulkanApp::initVulkan()
 	LoadObjectMaterials();
 
 	
-
 	//Global Materials
+	voxelConetracingMaterial = new VoxelConetracingMaterial;
+	voxelConetracingMaterial->setDirectionalLights(&directionLights);
+	voxelConetracingMaterial->LoadFromFilename(device, physicalDevice, voxelConetracingMaterial->commandPool, postProcessQueue, "VXGI_material");
+	voxelConetracingMaterial->creatDirectionalLightBuffer();
+	voxelConetracingMaterial->setShaderPaths("shaders/voxelConeTracing.vert.spv", "shaders/voxelConeTracing.frag.spv", "", "", "", "");
+	voxelConetracingMaterial->setScreenScale(VXGIPostProcess->getScreenScale());
+	VXGIPostProcess->material = voxelConetracingMaterial;
+
+
 	lightingMaterial = new LightingMaterial;	
 	lightingMaterial->setDirectionalLights(&directionLights);	
 	lightingMaterial->LoadFromFilename(device, physicalDevice, sceneStage->commandPool, lightingQueue, "lighting_material");
 	lightingMaterial->creatDirectionalLightBuffer();
-	lightingMaterial->setShaderPaths("shaders/lighting.vert.spv", "shaders/lighting.frag.spv", "");
+	lightingMaterial->setShaderPaths("shaders/lighting.vert.spv", "shaders/lighting.frag.spv", "", "", "", "");
 	//Link
 	sceneStage->material = lightingMaterial;
 	
-
 	debugDisplayMaterials.resize(NUM_DEBUGDISPLAY);
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
 		debugDisplayMaterials[i] = new DebugDisplayMaterial;
 		debugDisplayMaterials[i]->LoadFromFilename(device, physicalDevice, deferredCommandPool, lightingQueue, "debugDisplay_material");
-		debugDisplayMaterials[i]->setShaderPaths("shaders/debug.vert.spv", "shaders/debug" + convertToString((int)i) + ".frag.spv", "");
+		debugDisplayMaterials[i]->setShaderPaths("shaders/debug.vert.spv", "shaders/debug" + convertToString(static_cast<int>(i)) + ".frag.spv", "", "", "", "");
 	}
 
 	//Post Process Materials
 	hdrHighlightMaterial = new HDRHighlightMaterial;
 	hdrHighlightMaterial->LoadFromFilename(device, physicalDevice, HDRHighlightPostProcess->commandPool, postProcessQueue, "hdrHighlight_material");
-	hdrHighlightMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/HDRHighlight.frag.spv", "");
+	hdrHighlightMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/HDRHighlight.frag.spv", "", "", "", "");
 	hdrHighlightMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM, DOWNSAMPLING_BLOOM));
 
 	//Link
 	HDRHighlightPostProcess->material = hdrHighlightMaterial;
 
-	horizontalMaterial = new BlurMaterial;
-	horizontalMaterial->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess->commandPool, postProcessQueue, "horizontalBlur_material");
-	horizontalMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/horizontalBlur.frag.spv", "");
-	horizontalMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM* 2.0f, DOWNSAMPLING_BLOOM* 2.0f));
 
-	HorizontalBlurPostProcess->material = horizontalMaterial;
-	
-	verticalMaterial = new BlurMaterial;
-	verticalMaterial->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess->commandPool, postProcessQueue, "verticalBlur_material");
-	verticalMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/verticalBlur.frag.spv", "");
-	verticalMaterial->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM* 4.0f, DOWNSAMPLING_BLOOM* 4.0f));
-	
-	VerticalBlurPostProcess->material = verticalMaterial;
+	HBMaterial = new BlurMaterial;
+	HBMaterial->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess->commandPool, postProcessQueue, "HB_material");
+	HBMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/horizontalBlur.frag.spv", "", "", "", "");
+	HBMaterial->setScreenScale(HorizontalBlurPostProcess->getScreenScale());
+	HorizontalBlurPostProcess->material = HBMaterial;
+
+	VBMaterial = new BlurMaterial;
+	VBMaterial->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess->commandPool, postProcessQueue, "VB_material");
+	VBMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/verticalBlur.frag.spv", "", "", "", "");
+	VBMaterial->setScreenScale(VerticalBlurPostProcess->getScreenScale());
+	VerticalBlurPostProcess->material = VBMaterial;
+
+	HBMaterial2 = new BlurMaterial;
+	HBMaterial2->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess2->commandPool, postProcessQueue, "HB2_material");
+	HBMaterial2->setShaderPaths("shaders/postprocess.vert.spv", "shaders/horizontalBlur.frag.spv", "", "", "", "");
+	HBMaterial2->setScreenScale(HorizontalBlurPostProcess2->getScreenScale());
+	HorizontalBlurPostProcess2->material = HBMaterial2;
+
+	VBMaterial2 = new BlurMaterial;
+	VBMaterial2->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess2->commandPool, postProcessQueue, "VB2_material");
+	VBMaterial2->setShaderPaths("shaders/postprocess.vert.spv", "shaders/verticalBlur.frag.spv", "", "", "", "");
+	VBMaterial2->setScreenScale(VerticalBlurPostProcess2->getScreenScale());
+	VerticalBlurPostProcess2->material = VBMaterial2;
+
+	/*
+
+	compHBMaterial = new ComputeBlurMaterial;
+	compHBMaterial->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess->commandPool, postProcessQueue, "compHB_material");
+	compHBMaterial->setShaderPaths("", "", "", "", "", "shaders/computeHorizonBlur.comp.spv");
+	compHBMaterial->setScreenScale(HorizontalBlurPostProcess->getScreenScale());
+	HorizontalBlurPostProcess->material = compHBMaterial;
+
+	compVBMaterial = new ComputeBlurMaterial;
+	compVBMaterial->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess->commandPool, postProcessQueue, "compVB_material");
+	compVBMaterial->setShaderPaths("", "", "", "", "", "shaders/computeVerticalBlur.comp.spv");
+	compVBMaterial->setScreenScale(VerticalBlurPostProcess->getScreenScale());
+	VerticalBlurPostProcess->material = compVBMaterial;
 
 
-	horizontalMaterial2 = new BlurMaterial;
-	horizontalMaterial2->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess2->commandPool, postProcessQueue, "horizontalBlur2_material");
-	horizontalMaterial2->setShaderPaths("shaders/postprocess.vert.spv", "shaders/horizontalBlur.frag.spv", "");
-	horizontalMaterial2->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM * 8.0f, DOWNSAMPLING_BLOOM * 8.0f));
+	compHBMaterial2 = new ComputeBlurMaterial;
+	compHBMaterial2->LoadFromFilename(device, physicalDevice, HorizontalBlurPostProcess2->commandPool, postProcessQueue, "compHB_material2");
+	compHBMaterial2->setShaderPaths("", "", "", "", "", "shaders/computeHorizonBlur.comp.spv");
+	compHBMaterial2->setScreenScale(HorizontalBlurPostProcess2->getScreenScale());
+	HorizontalBlurPostProcess2->material = compHBMaterial2;
 
-	HorizontalBlurPostProcess2->material = horizontalMaterial2;
-
-	verticalMaterial2 = new BlurMaterial;
-	verticalMaterial2->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess2->commandPool, postProcessQueue, "verticalBlur2_material");
-	verticalMaterial2->setShaderPaths("shaders/postprocess.vert.spv", "shaders/verticalBlur.frag.spv", "");
-	verticalMaterial2->setScreenScale(glm::vec2(DOWNSAMPLING_BLOOM * 16.0f, DOWNSAMPLING_BLOOM * 16.0f));
-
-	VerticalBlurPostProcess2->material = verticalMaterial2;
-
+	compVBMaterial2 = new ComputeBlurMaterial;
+	compVBMaterial2->LoadFromFilename(device, physicalDevice, VerticalBlurPostProcess2->commandPool, postProcessQueue, "compVzB_material2");
+	compVBMaterial2->setShaderPaths("", "", "", "", "", "shaders/computeVerticalBlur.comp.spv");
+	compVBMaterial2->setScreenScale(VerticalBlurPostProcess2->getScreenScale());
+	VerticalBlurPostProcess2->material = compVBMaterial2;
+	*/
 
 
+	/*
+	voxelRenderMaterial = new VoxelRenderMaterial;
+	voxelRenderMaterial->LoadFromFilename(device, physicalDevice, VoxelRenderProcess->commandPool, postProcessQueue, "voxelRender_material");
+	voxelRenderMaterial->setShaderPaths("shaders/voxelRender.vert.spv", "shaders/voxelRender.frag.spv", "", "", "shaders/voxelRender.geom.spv", "");
 
+	VoxelRenderProcess->material = voxelRenderMaterial;
+	*/
 
 
 	lastPostProcessMaterial = new LastPostProcessgMaterial;
 	lastPostProcessMaterial->LoadFromFilename(device, physicalDevice, LastPostProcess->commandPool, postProcessQueue, "lastPostProcess_material");
-	lastPostProcessMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/lastPostProcess.frag.spv", "");
+	lastPostProcessMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/lastPostProcess.frag.spv", "", "", "", "");
 
 	LastPostProcess->material = lastPostProcessMaterial;
 
 	
 
+	//VR BARREL AND ABERRATION
+	/*
+	BarrelAndAberrationPostProcessMaterial = new HDRHighlightMaterial;
+	BarrelAndAberrationPostProcessMaterial->LoadFromFilename(device, physicalDevice, BarrelAndAberrationPostProcess->commandPool, postProcessQueue, "BarrelAndAberrationPostProcess_material");
+	BarrelAndAberrationPostProcessMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/BarrelAndAberrationPostProcess.frag.spv", "", "", "", "");
+	BarrelAndAberrationPostProcess->material = BarrelAndAberrationPostProcessMaterial;
+	*/
+
 	//Frame Buffer Materials
 	frameBufferMaterial = new FinalRenderingMaterial;
 	frameBufferMaterial->LoadFromFilename(device, physicalDevice, frameBufferCommandPool, presentQueue, "frameDisplay_material");
-	frameBufferMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/scene.frag.spv", "");
-
-
-
-
-
-	//Create Objects
+	frameBufferMaterial->setShaderPaths("shaders/postprocess.vert.spv", "shaders/scene.frag.spv", "", "", "", "");
+	
+	//[Objects]
 	
 	
-	Object *obj01 = new Object;
-	
-	obj01->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Johanna.obj", 0, false);	
-	obj01->scale = glm::vec3(0.3f);
-	obj01->position = glm::vec3(-3.0, 0.0, -0.25);
-	obj01->update();	
-	obj01->bRoll = true;
-	obj01->connectMaterial(AssetDatabase::LoadMaterial("standard_material"), 0);
-	objectManager.push_back(obj01);
-	
-	
-	Object *obj03 = new Object;
-	
-	obj03->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Cerberus/Cerberus.obj", 0, false);
-	obj03->scale = glm::vec3(4.0f);
-	obj03->position = glm::vec3(0.0, 3.0, -0.25);
-	obj03->update();
-	obj03->bRoll = true;
-	obj03->connectMaterial(AssetDatabase::LoadMaterial("standard_material3"), 0);
-	objectManager.push_back(obj03);
 	
 
-	Object *obj02 = new Object;
+	
+	Object *Chromie = new Object;
 
-	obj02->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Chromie.obj", 0, false);
-	obj02->scale = glm::vec3(0.1f);
-	obj02->position = glm::vec3(3.0, 0.0, -0.25);
-	obj02->update();
-	obj02->bRoll = true;
-	obj02->connectMaterial(AssetDatabase::LoadMaterial("standard_material2"), 0);
-	objectManager.push_back(obj02);
+	Chromie->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Chromie.obj", 0, false);
+	Chromie->scale = glm::vec3(0.1f);
+	Chromie->UpdateOrbit(0.0f, 85.0f, 0.0);
+	Chromie->position = glm::vec3(3.0, -0.05, -0.25);
+	Chromie->update();
+	//Chromie->bRoll = true;
+	Chromie->rollSpeed = 10.0f;
+	Chromie->connectMaterial(AssetDatabase::LoadMaterial("standard_material2"), 0);
+
+	objectManager.push_back(Chromie);
 
 	
+	Object *Cerberus = new Object;
+	
+	Cerberus->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Cerberus/Cerberus.obj", 0, false);
+	Cerberus->scale = glm::vec3(3.0f);
+	Cerberus->position = glm::vec3(0.0, 3.0, -0.25);
+	Cerberus->update();
+	Cerberus->bRoll = true;
+	Cerberus->rollSpeed = 17.0f;
+	Cerberus->connectMaterial(AssetDatabase::LoadMaterial("standard_material3"), 0);
+
+	objectManager.push_back(Cerberus);
+	
+	/*
+	Object *Johanna = new Object;
+	Johanna->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/Johanna.obj", 0, false);	
+	Johanna->scale = glm::vec3(0.3f);
+	Johanna->position = glm::vec3(-1.0, -0.05, -0.25);
+	Johanna->update();	
+	Johanna->bRoll = true;
+	Johanna->rollSpeed = 6.0f;
+	Johanna->connectMaterial(AssetDatabase::LoadMaterial("standard_material"), 0);
+	objectManager.push_back(Johanna);
+	*/
+
 	Object *sponza = new Object;
-	
 	sponza->init(device, physicalDevice, deferredCommandPool, objectDrawQueue, "objects/sponza.obj", -1, true);
 	sponza->scale = glm::vec3(0.01f);
 	sponza->position = glm::vec3(0.0, 0.0, 0.0);
 	sponza->update();
-	
 	ConnectSponzaMaterials(sponza);
-	
 	objectManager.push_back(sponza);
 	
+
+	voxelizator.Initialize(device, physicalDevice, surface, LayerCount, uint32_t( floor(log2(VOXEL_SIZE))) , glm::vec2(1.0, 1.0));
+	voxelizator.createImages(VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	
+	voxelizator.createCommandPool();
+
+	voxelizator.standardObject = sponza;
+	//voxelizator.standardObject = Johanna;
+	voxelizator.setMatrices();
+	
+	//voxelizator.createBuffers(20000000);
+
+	glm::vec3 EX = voxelizator.standardObject->AABB.Extents * 2.0f;
+	voxelizator.createVoxelInfoBuffer(voxelizator.standardObject->AABB.Center, glm::max(glm::max(EX.x, EX.y), EX.z), VOXEL_SIZE, 0.01f);
+
+	voxelizator.setQueue(objectDrawQueue, TagQueue, AllocationQueue, MipmapQueue);
+	voxelizator.initMaterial();
+	
+
+
+	
+	//voxelRenderMaterial->createVoxelInfoBuffer(voxelizator.thisObject->AABB.Center, glm::max(glm::max(EX.x, EX.y), EX.z), VOXEL_SIZE);
+
+
 
 	offScreenPlane = new singleTriangular;
 	offScreenPlane->LoadFromFilename(device, physicalDevice, frameBufferCommandPool, lightingQueue, "offScreenPlane");
@@ -1117,30 +1463,57 @@ void VulkanApp::initVulkan()
 	createImageViews();
 
 
+
 	//05. Create Renderpass
 	createDeferredRenderPass();
 
+	standardShadow.createRenderPass();
+
+	for (size_t i = 0; i < objectManager.size(); i++)
+	{
+		objectManager[i]->createShadowMaterial(standardShadow.commandPool, standardShadow.queue, standardShadow.renderPass,
+			glm::vec2(static_cast<float>(standardShadow.Extent2D.width), static_cast<float>(standardShadow.Extent2D.height)), glm::vec2(0.0, 0.0), lightingMaterial->shadowConstantBuffer); // !!!!!!!
+	}
+	
+	
+	voxelizator.createRenderPass();
+	
+	
+
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
-		postProcessStages[i]->createRenderPass();
+		if(!postProcessStages[i]->isCSPostProcess)
+			postProcessStages[i]->createRenderPass();
 	}
 
-	createFrameBufferRenderPass();
+	//createFrameBufferRenderPass();
 
 
 	//06. Create Depth
 	createDepthResources();
 
+	standardShadow.createDepthResources();
 
+	//VoxelRenderProcess->createDepthResources();
+
+		
 	//07. Create FrameBuffers
 	createDeferredFramebuffer();
+	standardShadow.createFramebuffer();
+
+	
+	voxelizator.createFramebuffer();
+	
+	
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
-		postProcessStages[i]->createFramebuffer();
+		if (!postProcessStages[i]->isCSPostProcess)
+			postProcessStages[i]->createFramebuffer();
 	}
 
-	createFramebuffers();
+
+	//createFramebuffers();
 
 
 
@@ -1161,8 +1534,23 @@ void VulkanApp::initVulkan()
 		}
 	}
 
+	
+	for (size_t i = 0; i < voxelizator.standardObject->geos.size(); i++)
+	{
+		VoxelizeMaterial* VXGIMat = voxelizator.VXGIMaterials[i];
+
+		VXGIMat->fragCount = voxelizator.fragCount;
+		VXGIMat->setBuffers(voxelizator.voxelFragCountBuffer, voxelizator.ouputPosListBuffer, voxelizator.ouputAlbedoListBuffer);
+
+		VXGIMat->set3DImages(voxelizator.albedo3DImageViewSet[0]);
+
+		VXGIMat->createDescriptorSet();
+		VXGIMat->connectRenderPass(voxelizator.renderPass);
+		VXGIMat->createGraphicsPipeline(voxelizator.extent2D);
+	}
+
 	//[global]
-	lightingMaterial->setGbuffers(&gBufferImageViews, depthImageView);
+	lightingMaterial->setGbuffers(&gBufferImageViews, depthImageView, standardShadow.outputImageView, VXGIPostProcess->outputImageView);
 	lightingMaterial->createDescriptorSet();
 	lightingMaterial->connectRenderPass(sceneStage->renderPass);
 	lightingMaterial->createGraphicsPipeline(swapChainExtent);
@@ -1173,38 +1561,67 @@ void VulkanApp::initVulkan()
 	hdrHighlightMaterial->connectRenderPass(HDRHighlightPostProcess->renderPass);
 	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(HDRHighlightPostProcess->pExtent2D->width, HDRHighlightPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	horizontalMaterial->setImageViews(HDRHighlightPostProcess->outputImageView, depthImageView);
-	horizontalMaterial->createDescriptorSet();
-	horizontalMaterial->connectRenderPass(HorizontalBlurPostProcess->renderPass);
-	horizontalMaterial->createGraphicsPipeline(glm::vec2(HorizontalBlurPostProcess->pExtent2D->width, HorizontalBlurPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
+	HBMaterial->setImageViews(HDRHighlightPostProcess->outputImageView, depthImageView);
+	HBMaterial->createDescriptorSet();
+	HBMaterial->connectRenderPass(HorizontalBlurPostProcess->renderPass);
+	HBMaterial->createGraphicsPipeline(glm::vec2(HorizontalBlurPostProcess->pExtent2D->width, HorizontalBlurPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	verticalMaterial->setImageViews(HorizontalBlurPostProcess->outputImageView, depthImageView);
-	verticalMaterial->createDescriptorSet();
-	verticalMaterial->connectRenderPass(VerticalBlurPostProcess->renderPass);
-	verticalMaterial->createGraphicsPipeline(glm::vec2(VerticalBlurPostProcess->pExtent2D->width, VerticalBlurPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
-	
-	horizontalMaterial2->setImageViews(VerticalBlurPostProcess->outputImageView, depthImageView);
-	horizontalMaterial2->createDescriptorSet();
-	horizontalMaterial2->connectRenderPass(HorizontalBlurPostProcess2->renderPass);
-	horizontalMaterial2->createGraphicsPipeline(glm::vec2(HorizontalBlurPostProcess2->pExtent2D->width, HorizontalBlurPostProcess2->pExtent2D->height), glm::vec2(0.0, 0.0));
+	VBMaterial->setImageViews(HorizontalBlurPostProcess->outputImageView, depthImageView);
+	VBMaterial->createDescriptorSet();
+	VBMaterial->connectRenderPass(VerticalBlurPostProcess->renderPass);
+	VBMaterial->createGraphicsPipeline(glm::vec2(VerticalBlurPostProcess->pExtent2D->width, VerticalBlurPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	verticalMaterial2->setImageViews(HorizontalBlurPostProcess2->outputImageView, depthImageView);
-	verticalMaterial2->createDescriptorSet();
-	verticalMaterial2->connectRenderPass(VerticalBlurPostProcess2->renderPass);
-	verticalMaterial2->createGraphicsPipeline(glm::vec2(VerticalBlurPostProcess2->pExtent2D->width, VerticalBlurPostProcess2->pExtent2D->height), glm::vec2(0.0, 0.0));
+	HBMaterial2->setImageViews(VerticalBlurPostProcess->outputImageView, depthImageView);
+	HBMaterial2->createDescriptorSet();
+	HBMaterial2->connectRenderPass(HorizontalBlurPostProcess2->renderPass);
+	HBMaterial2->createGraphicsPipeline(glm::vec2(HorizontalBlurPostProcess2->pExtent2D->width, HorizontalBlurPostProcess2->pExtent2D->height), glm::vec2(0.0, 0.0));
 
+	VBMaterial2->setImageViews(HorizontalBlurPostProcess2->outputImageView, depthImageView);
+	VBMaterial2->createDescriptorSet();
+	VBMaterial2->connectRenderPass(VerticalBlurPostProcess2->renderPass);
+	VBMaterial2->createGraphicsPipeline(glm::vec2(VerticalBlurPostProcess2->pExtent2D->width, VerticalBlurPostProcess2->pExtent2D->height), glm::vec2(0.0, 0.0));
+
+	/*
+	compHBMaterial->setImageViews(HDRHighlightPostProcess->outputImageView, HorizontalBlurPostProcess->outputImageView);
+	compHBMaterial->createDescriptorSet();
+	compHBMaterial->updateDispatchSize(glm::ivec3( 1, static_cast<int>(HorizontalBlurPostProcess->getImageSize().y), 1));
+	compHBMaterial->createComputePipeline();
+
+	compVBMaterial->setImageViews(HorizontalBlurPostProcess->outputImageView, VerticalBlurPostProcess->outputImageView);
+	compVBMaterial->createDescriptorSet();
+	compVBMaterial->updateDispatchSize(glm::ivec3(static_cast<int>(VerticalBlurPostProcess->getImageSize().x), 1, 1));
+	compVBMaterial->createComputePipeline();
+
+	compHBMaterial2->setImageViews(VerticalBlurPostProcess->outputImageView, HorizontalBlurPostProcess2->outputImageView);
+	compHBMaterial2->createDescriptorSet();
+	compHBMaterial2->updateDispatchSize(glm::ivec3(1, static_cast<int>(HorizontalBlurPostProcess2->getImageSize().y), 1));
+	compHBMaterial2->createComputePipeline();
+
+	compVBMaterial2->setImageViews(HorizontalBlurPostProcess2->outputImageView, VerticalBlurPostProcess2->outputImageView);
+	compVBMaterial2->createDescriptorSet();
+	compVBMaterial2->updateDispatchSize(glm::ivec3(static_cast<int>(VerticalBlurPostProcess2->getImageSize().x), 1, 1));
+	compVBMaterial2->createComputePipeline();
+	*/
 
 	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, VerticalBlurPostProcess2->outputImageView, depthImageView);
 	lastPostProcessMaterial->createDescriptorSet();
 	lastPostProcessMaterial->connectRenderPass(LastPostProcess->renderPass);
-	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(LastPostProcess->pExtent2D->width, LastPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
+	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(LastPostProcess->pExtent2D->width, LastPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));	
 	
 
+
+	//VR BARREL AND ABERRATION
+	/*
+	BarrelAndAberrationPostProcessMaterial->setImageViews(LastPostProcess->outputImageView, depthImageView);
+	BarrelAndAberrationPostProcessMaterial->createDescriptorSet();
+	BarrelAndAberrationPostProcessMaterial->connectRenderPass(BarrelAndAberrationPostProcess->renderPass);
+	BarrelAndAberrationPostProcessMaterial->createGraphicsPipeline(glm::vec2(BarrelAndAberrationPostProcess->pExtent2D->width, BarrelAndAberrationPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
+	*/
 
 	//[debug]
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
-		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, VerticalBlurPostProcess2->outputImageView);
+		debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, VXGIPostProcess->outputImageView, standardShadow.outputImageView);
 		debugDisplayMaterials[i]->createDescriptorSet();
 		debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);
 	}
@@ -1228,14 +1645,59 @@ void VulkanApp::initVulkan()
 
 	//[framebuffer]
 	frameBufferMaterial->setImageViews(theLastPostProcess->outputImageView, depthImageView);
+	
+	//frameBufferMaterial->setImageViews(standardShadow.outputImageView, depthImageView);
+	
+	//frameBufferMaterial->setImageViews(BarrelAndAberrationPostProcess->outputImageView, depthImageView);
+	//frameBufferMaterial->setImageViews(voxelizator.outputImageView, depthImageView);
 	frameBufferMaterial->createDescriptorSet();
 	frameBufferMaterial->connectRenderPass(frameBufferRenderPass);
 	frameBufferMaterial->createGraphicsPipeline(glm::vec2(swapChainExtent.width, swapChainExtent.height), glm::vec2(0.0, 0.0));
 
+
+	voxelizator.createCommandBuffers();
+	voxelizator.createSemaphore();
+
+	//Create Semaphore
+	createSemaphores();
+	standardShadow.createSemaphore();
+
+	for (size_t i = 0; i < postProcessStages.size(); i++)
+	{
+		postProcessStages[i]->createSemaphore();
+	}
+
+	//pre-Draw Voxels
+	//void* data;
+	//voxelizator.createVoxels(camera, objectDrawSemaphore);
+	voxelizator.createMipmaps(voxelizator.createVoxels(camera, VK_NULL_HANDLE));
+
+	//Voxel Render
+	/*
+	VoxelRenderProcess->vertexSize = voxelizator.fragCount;
+
+	voxelRenderMaterial->setfragListVoxelCount(VoxelRenderProcess->vertexSize);
+	voxelRenderMaterial->createVertexBuffer();
+	voxelRenderMaterial->setBuffer(voxelizator.ouputPosListBuffer, voxelizator.ouputAlbedoListBuffer, voxelizator.OctreeBuffer, voxelizator.voxelInfoBuffer);
+	voxelRenderMaterial->maxNode = voxelizator.maxiumOCtreeNodeCount;
+
+	voxelRenderMaterial->setImageviews(voxelizators[i]->albedo3DImageViewSet[0]);
+	voxelRenderMaterial->createDescriptorSet();
+	voxelRenderMaterial->connectRenderPass(VoxelRenderProcess->renderPass);
+	voxelRenderMaterial->createGraphicsPipeline(glm::vec2(VoxelRenderProcess->pExtent2D->width, VoxelRenderProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
+	*/
+
+	voxelConetracingMaterial->setImageViews(sceneStage->outputImageView, depthImageView, gBufferImageViews[NORMAL_COLOR], gBufferImageViews[SPECULAR_COLOR], &voxelizator.albedo3DImageViewSet, standardShadow.outputImageView);
+	voxelConetracingMaterial->setBuffers(voxelizator.voxelInfoBuffer, lightingMaterial->shadowConstantBuffer);
+	voxelConetracingMaterial->createDescriptorSet();
+	voxelConetracingMaterial->connectRenderPass(VXGIPostProcess->renderPass);
+	voxelConetracingMaterial->createGraphicsPipeline(glm::vec2(VXGIPostProcess->pExtent2D->width, VXGIPostProcess->pExtent2D->height), glm::vec2(0.0, 0.0));
 	
-	
+
 	//09. Create CommandBuffers
 	createDeferredCommandBuffers();
+
+	standardShadow.createCommandBuffers();
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
@@ -1243,18 +1705,24 @@ void VulkanApp::initVulkan()
 		postProcessStages[i]->createCommandBuffers();
 	}
 
-	createFrameBufferCommandBuffers();
+	createFrameBufferCommandBuffers();	
 
-	createSemaphores();
-	
-	for (size_t i = 0; i < postProcessStages.size(); i++)
-	{
-		postProcessStages[i]->createSemaphore();
-	}
+	updateDrawMode();
 }
+
+
 
 void VulkanApp::createInstance()
 {
+
+	//test call recreateswapchain with vr mode and renderToHmd
+	bVRmode = bRenderToHmd;
+	camera.vrMode = bVRmode;
+
+	//OCULUS SDK
+	//Get the required Vulkan extensions
+	ovr_GetInstanceExtensionsVk(luid, extensionNames, &extensionNamesSize);
+
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	appInfo.pApplicationName = "VR Project";
@@ -1266,6 +1734,7 @@ void VulkanApp::createInstance()
 	VkInstanceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
 	createInfo.pApplicationInfo = &appInfo;
+
 
 	auto extensions = getRequiredExtensions();
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -1313,6 +1782,30 @@ bool VulkanApp::checkValidationLayerSupport()
 	return true;
 }
 
+//OCULUS SDK
+void ParseExtensionString(char* names, uint32_t& count, const char* const*& arrayPtr) {
+	uint32_t extensionCount = 0;
+	char* nextExtensionName = names;
+	static std::array<const char*, 100> extensionNamePtrs;
+	while (*nextExtensionName && (extensionCount < extensionNamePtrs.size()))
+	{
+		extensionNamePtrs[extensionCount++] = nextExtensionName;
+		// Skip to a space or null
+		while (*(++nextExtensionName))
+		{
+			if (*nextExtensionName == ' ')
+			{
+				// Null-terminate and break out of the loop
+				*nextExtensionName++ = '\0';
+				break;
+			}
+		}
+	}
+
+	count = extensionCount;
+	arrayPtr = &extensionNamePtrs[0];
+}
+
 std::vector<const char*> VulkanApp::getRequiredExtensions()
 {
 	std::vector<const char*> extensions;
@@ -1324,6 +1817,15 @@ std::vector<const char*> VulkanApp::getRequiredExtensions()
 	for (unsigned int i = 0; i < glfwExtensionCount; i++) {
 		extensions.push_back(glfwExtensions[i]);
 	}
+
+	//OCULUS SDK
+	uint32_t count;
+	const char* const* arrayPtr;
+	ParseExtensionString(extensionNames, count, arrayPtr);
+	for (unsigned int i = 0; i < count; i++) {
+		extensions.push_back(arrayPtr[i]);
+	}
+
 
 	if (enableValidationLayers) {
 		extensions.push_back(VK_EXT_DEBUG_REPORT_EXTENSION_NAME);
@@ -1534,15 +2036,7 @@ void VulkanApp::pickPhysicalDevice()
 
 bool VulkanApp::isDeviceSuitable(VkPhysicalDevice device)
 {
-	/*
-	VkPhysicalDeviceProperties deviceProperties;
-	VkPhysicalDeviceFeatures deviceFeatures;
-	vkGetPhysicalDeviceProperties(device, &deviceProperties);
-	vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
-
-	return deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && deviceFeatures.geometryShader;
-	*/
-
+	
 	QueueFamilyIndices indices = findQueueFamilies(device, surface);
 
 	bool extensionsSupported = checkDeviceExtensionSupport(device);
@@ -1599,7 +2093,7 @@ void VulkanApp::createLogicalDevice()
 
 	VkPhysicalDeviceFeatures deviceFeatures = {};
 	deviceFeatures.samplerAnisotropy = VK_TRUE;
-
+	deviceFeatures.geometryShader = VK_TRUE;
 
 	VkDeviceCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -1607,6 +2101,16 @@ void VulkanApp::createLogicalDevice()
 	createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 	createInfo.pQueueCreateInfos = queueCreateInfos.data();
 	createInfo.pEnabledFeatures = &deviceFeatures;
+
+	//OCULUS SDK
+	extensionNamesSize = sizeof(extensionNames);
+	ovr_GetDeviceExtensionsVk(luid, extensionNames, &extensionNamesSize);
+	uint32_t count;
+	const char* const* arrayPtr;
+	ParseExtensionString(extensionNames, count, arrayPtr);
+	for (unsigned int i = 0; i < count; i++) {
+		deviceExtensions.push_back(arrayPtr[i]);
+	}
 
 	createInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
 	createInfo.ppEnabledExtensionNames = deviceExtensions.data();
@@ -1626,52 +2130,22 @@ void VulkanApp::createLogicalDevice()
 	}
 
 	vkGetDeviceQueue(device, indices.deferredFamily, 0, &objectDrawQueue);
+
+
+	vkGetDeviceQueue(device, indices.deferredFamily, 0, &TagQueue);
+
+	vkGetDeviceQueue(device, indices.deferredFamily, 0, &AllocationQueue);
+
+	vkGetDeviceQueue(device, indices.deferredFamily, 0, &MipmapQueue);
+	
+
+
 	vkGetDeviceQueue(device, indices.graphicsFamily, 0, &lightingQueue);
 
 	vkGetDeviceQueue(device, indices.postProcessFamily, 0, &postProcessQueue);
 
 	vkGetDeviceQueue(device, indices.presentFamily, 0, &presentQueue);
 }
-
-
-/*
-QueueFamilyIndices VulkanApp::findQueueFamilies(VkPhysicalDevice device)
-{
-	QueueFamilyIndices indices;
-
-	uint32_t queueFamilyCount = 0;
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
-
-	std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, queueFamilies.data());
-
-	int i = 0;
-	for (const auto& queueFamily : queueFamilies)
-	{
-
-		if (queueFamily.queueCount > 0 && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			indices.deferredFamily = i;
-			indices.graphicsFamily = i;
-		}
-
-		VkBool32 presentSupport = false;
-		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &presentSupport);
-
-		if (queueFamily.queueCount > 0 && presentSupport)
-		{
-			indices.presentFamily = i;
-		}
-
-		if (indices.isComplete()) {
-			break;
-		}
-
-		i++;
-	}
-
-	return indices;
-}
-*/
 
 SwapChainSupportDetails VulkanApp::querySwapChainSupport(VkPhysicalDevice device)
 {
@@ -1824,12 +2298,47 @@ void VulkanApp::reCreateSwapChain()
 
 	cleanUpSwapChain();
 
-	createSwapChain();
+	standardShadow.cleanUp();
+
+	//createSwapChain();
+	//01. Create Swapchains
+	if (bRenderToHmd) {
+		swapChainImageFormat = oculusSwapFormat;
+		swapChainExtent = swapExtent;
+		createFrameBufferRenderPass();
+		oculusRenderPass.pass = frameBufferRenderPass; 
+		textureSwapChain.Create(session, swapExtent, oculusRenderPass, VK_NULL_HANDLE, device);
+		//for (auto& tex : textureSwapChain.texElements) {
+		//	swapChainImages.push_back(tex.image);
+		//	swapChainImageViews.push_back(tex.view);
+		//	swapChainFramebuffers.push_back(tex.fb.fb);
+		//}
+		swapChainImages.resize(textureSwapChain.texElements.size());
+		swapChainImageViews.resize(textureSwapChain.texElements.size());
+		swapChainFramebuffers.resize(textureSwapChain.texElements.size());
+		for (int i = 0; i < textureSwapChain.texElements.size(); ++i) {
+			auto& tex = textureSwapChain.texElements[i];
+			swapChainImages[i]			= tex.image;
+			swapChainImageViews[i]		= tex.view;
+			swapChainFramebuffers[i]	= tex.fb.fb;
+		}
+		initOVRLayer();
+	} else {
+		createSwapChain();
+		createSwapChainImageViews();
+		createFrameBufferRenderPass();
+		createFramebuffers();
+	}
 
 	createGbuffers();
 	createSceneBuffer();
 	createImageViews();
+	//createSwapChainImageViews();
 
+
+
+	
+	standardShadow.createImages(VK_FORMAT_R16_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	//sceneStage->createImages();
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
@@ -1843,19 +2352,23 @@ void VulkanApp::reCreateSwapChain()
 	//REDNER PASS
 	createDeferredRenderPass();
 
+	standardShadow.createRenderPass();
+
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
 		PostProcess* thisPostProcess = postProcessStages[i];
-		thisPostProcess->createRenderPass();
+
+		if (!postProcessStages[i]->isCSPostProcess)
+			thisPostProcess->createRenderPass();
 	}
 	
-	createFrameBufferRenderPass();
-
-
+	//createFrameBufferRenderPass();
+	
 
 	createDepthResources();
+	standardShadow.createDepthResources();
 
-
+	//postProcessStages[7]->createDepthResources();
 
 	//Object Material
 	for (size_t i = 0; i < materialManager.size(); i++)
@@ -1873,9 +2386,24 @@ void VulkanApp::reCreateSwapChain()
 			continue;
 		}
 	}
+
+	for (size_t i = 0; i < objectManager.size(); i++)
+	{
+		objectManager[i]->shadowMaterial->updateDescriptorSet();
+		objectManager[i]->shadowMaterial->connectRenderPass(standardShadow.renderPass);
+		objectManager[i]->shadowMaterial->createGraphicsPipeline(glm::vec2(standardShadow.Extent2D.width, standardShadow.Extent2D.height), glm::vec2(0.0, 0.0));
+	}
+
+	
+	voxelConetracingMaterial->vrMode = bVRmode;
+	voxelConetracingMaterial->setImageViews(sceneStage->outputImageView, depthImageView, gBufferImageViews[NORMAL_COLOR], gBufferImageViews[SPECULAR_COLOR], &voxelizator.albedo3DImageViewSet, standardShadow.outputImageView);
+	voxelConetracingMaterial->updateDescriptorSet();
+	voxelConetracingMaterial->connectRenderPass(postProcessStages[0]->renderPass);
+	voxelConetracingMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[0]->pExtent2D->width, postProcessStages[0]->pExtent2D->height), glm::vec2(0.0, 0.0));
+
 	
 	lightingMaterial->vrMode = bVRmode;
-	lightingMaterial->setGbuffers(&gBufferImageViews, depthImageView);
+	lightingMaterial->setGbuffers(&gBufferImageViews, depthImageView, standardShadow.outputImageView, postProcessStages[0]->outputImageView );
 	lightingMaterial->updateDescriptorSet();
 	lightingMaterial->connectRenderPass(sceneStage->renderPass);
 	lightingMaterial->createGraphicsPipeline(swapChainExtent);
@@ -1884,7 +2412,7 @@ void VulkanApp::reCreateSwapChain()
 		for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 		{
 			debugDisplayMaterials[i]->vrMode = bVRmode;
-			debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[5]->outputImageView);
+			debugDisplayMaterials[i]->setDubugBuffers(&gBufferImageViews, depthImageView, postProcessStages[0]->outputImageView, standardShadow.outputImageView);
 			debugDisplayMaterials[i]->updateDescriptorSet();
 			debugDisplayMaterials[i]->connectRenderPass(frameBufferRenderPass);
 		}
@@ -1914,42 +2442,101 @@ void VulkanApp::reCreateSwapChain()
 	hdrHighlightMaterial->vrMode = bVRmode;
 	hdrHighlightMaterial->setImageViews(sceneStage->outputImageView, depthImageView);
 	hdrHighlightMaterial->updateDescriptorSet();
-	hdrHighlightMaterial->connectRenderPass(postProcessStages[1]->renderPass);
-	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[1]->pExtent2D->width, postProcessStages[1]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	hdrHighlightMaterial->connectRenderPass(postProcessStages[2]->renderPass);
+	hdrHighlightMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[2]->pExtent2D->width, postProcessStages[2]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	horizontalMaterial->vrMode = bVRmode;
-	horizontalMaterial->setImageViews(postProcessStages[1]->outputImageView, depthImageView);
-	horizontalMaterial->updateDescriptorSet();
-	horizontalMaterial->connectRenderPass(postProcessStages[2]->renderPass);
-	horizontalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[2]->pExtent2D->width, postProcessStages[2]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	HBMaterial->vrMode = bVRmode;
+	HBMaterial->setImageViews(postProcessStages[2]->outputImageView, depthImageView);
+	HBMaterial->updateDescriptorSet();
+	HBMaterial->connectRenderPass(postProcessStages[3]->renderPass);
+	HBMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[3]->pExtent2D->width, postProcessStages[3]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	verticalMaterial->vrMode = bVRmode;
-	verticalMaterial->setImageViews(postProcessStages[2]->outputImageView, depthImageView);
-	verticalMaterial->updateDescriptorSet();
-	verticalMaterial->connectRenderPass(postProcessStages[3]->renderPass);
-	verticalMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[3]->pExtent2D->width, postProcessStages[3]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	VBMaterial->vrMode = bVRmode;
+	VBMaterial->setImageViews(postProcessStages[3]->outputImageView, depthImageView);
+	VBMaterial->updateDescriptorSet();
+	VBMaterial->connectRenderPass(postProcessStages[4]->renderPass);
+	VBMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[4]->pExtent2D->width, postProcessStages[4]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
+	HBMaterial2->vrMode = bVRmode;
+	HBMaterial2->setImageViews(postProcessStages[4]->outputImageView, depthImageView);
+	HBMaterial2->updateDescriptorSet();
+	HBMaterial2->connectRenderPass(postProcessStages[5]->renderPass);
+	HBMaterial2->createGraphicsPipeline(glm::vec2(postProcessStages[5]->pExtent2D->width, postProcessStages[5]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	horizontalMaterial2->vrMode = bVRmode;
-	horizontalMaterial2->setImageViews(postProcessStages[3]->outputImageView, depthImageView);
-	horizontalMaterial2->updateDescriptorSet();
-	horizontalMaterial2->connectRenderPass(postProcessStages[4]->renderPass);
-	horizontalMaterial2->createGraphicsPipeline(glm::vec2(postProcessStages[4]->pExtent2D->width, postProcessStages[4]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	VBMaterial2->vrMode = bVRmode;
+	VBMaterial2->setImageViews(postProcessStages[5]->outputImageView, depthImageView);
+	VBMaterial2->updateDescriptorSet();
+	VBMaterial2->connectRenderPass(postProcessStages[6]->renderPass);
+	VBMaterial2->createGraphicsPipeline(glm::vec2(postProcessStages[6]->pExtent2D->width, postProcessStages[6]->pExtent2D->height), glm::vec2(0.0, 0.0));
 
-	verticalMaterial2->vrMode = bVRmode;
-	verticalMaterial2->setImageViews(postProcessStages[4]->outputImageView, depthImageView);
-	verticalMaterial2->updateDescriptorSet();
-	verticalMaterial2->connectRenderPass(postProcessStages[5]->renderPass);
-	verticalMaterial2->createGraphicsPipeline(glm::vec2(postProcessStages[5]->pExtent2D->width, postProcessStages[5]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	/*
+	compHBMaterial->vrMode = bVRmode;
+	compHBMaterial->setImageViews(postProcessStages[2]->outputImageView, postProcessStages[3]->outputImageView);
+	compHBMaterial->updateDescriptorSet();
+	compHBMaterial->updateDispatchSize(glm::ivec3(1, static_cast<int>(postProcessStages[3]->getImageSize().y), 1));
+	compHBMaterial->createComputePipeline();
+
+	compVBMaterial->vrMode = bVRmode;
+	compVBMaterial->setImageViews(postProcessStages[3]->outputImageView, postProcessStages[4]->outputImageView);
+	compVBMaterial->updateDescriptorSet();
+	compVBMaterial->updateDispatchSize(glm::ivec3(static_cast<int>(postProcessStages[4]->getImageSize().x), 1, 1));
+	compVBMaterial->createComputePipeline();
+
+	compHBMaterial2->vrMode = bVRmode;
+	compHBMaterial2->setImageViews(postProcessStages[4]->outputImageView, postProcessStages[5]->outputImageView);
+	compHBMaterial2->updateDescriptorSet();
+	compHBMaterial2->updateDispatchSize(glm::ivec3(1, static_cast<int>(postProcessStages[5]->getImageSize().y), 1));
+	compHBMaterial2->createComputePipeline();
+
+	compVBMaterial2->vrMode = bVRmode;
+	compVBMaterial2->setImageViews(postProcessStages[5]->outputImageView, postProcessStages[6]->outputImageView);
+	compVBMaterial2->updateDescriptorSet();
+	compVBMaterial2->updateDispatchSize(glm::ivec3(static_cast<int>(postProcessStages[6]->getImageSize().x), 1, 1));
+	compVBMaterial2->createComputePipeline();
+	*/
+
+	/*
+	voxelRenderMaterial->vrMode = bVRmode;
+
+	voxelRenderMaterial->updateDescriptorSet();
+	voxelRenderMaterial->connectRenderPass(postProcessStages[7]->renderPass);
+	voxelRenderMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[7]->pExtent2D->width, postProcessStages[7]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	*/
+
+	
+
 
 	lastPostProcessMaterial->vrMode = bVRmode;
-	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, postProcessStages[5]->outputImageView, depthImageView);
+	lastPostProcessMaterial->setImageViews(sceneStage->outputImageView, postProcessStages[6]->outputImageView, depthImageView);
 	lastPostProcessMaterial->updateDescriptorSet();
-	lastPostProcessMaterial->connectRenderPass(postProcessStages[4]->renderPass);
-	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[4]->pExtent2D->width, postProcessStages[4]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	lastPostProcessMaterial->connectRenderPass(postProcessStages[7]->renderPass);
+	lastPostProcessMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[7]->pExtent2D->width, postProcessStages[7]->pExtent2D->height), glm::vec2(0.0, 0.0));
+
 	
+
+	//VR BARREL AND ABERRATION
+	/*
+	BarrelAndAberrationPostProcessMaterial->vrMode = bVRmode;
+	BarrelAndAberrationPostProcessMaterial->setImageViews(postProcessStages[7]->outputImageView, depthImageView);
+	BarrelAndAberrationPostProcessMaterial->updateDescriptorSet();
+	BarrelAndAberrationPostProcessMaterial->connectRenderPass(postProcessStages[8]->renderPass);
+	BarrelAndAberrationPostProcessMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[8]->pExtent2D->width, postProcessStages[8]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	
+	
+	//VR BARREL AND ABERRATION
+	BarrelAndAberrationPostProcessMaterial->vrMode = bVRmode;
+	BarrelAndAberrationPostProcessMaterial->setImageViews(postProcessStages[6]->outputImageView, depthImageView);
+	BarrelAndAberrationPostProcessMaterial->updateDescriptorSet();
+	BarrelAndAberrationPostProcessMaterial->connectRenderPass(postProcessStages[7]->renderPass);
+	BarrelAndAberrationPostProcessMaterial->createGraphicsPipeline(glm::vec2(postProcessStages[7]->pExtent2D->width, postProcessStages[7]->pExtent2D->height), glm::vec2(0.0, 0.0));
+	*/
+
 	frameBufferMaterial->vrMode = bVRmode;
+	//frameBufferMaterial->setImageViews(postProcessStages.back()->outputImageView, depthImageView);
 	frameBufferMaterial->setImageViews(theLastPostProcess->outputImageView, depthImageView);
+	//frameBufferMaterial->setImageViews(standardShadow.outputImageView, depthImageView);
+	//frameBufferMaterial->setImageViews(voxelizator.outputImageView, depthImageView);
+	
 	frameBufferMaterial->updateDescriptorSet();
 	frameBufferMaterial->connectRenderPass(frameBufferRenderPass);
 	frameBufferMaterial->createGraphicsPipeline(glm::vec2(swapChainExtent.width, swapChainExtent.height), glm::vec2(0.0, 0.0));
@@ -1958,15 +2545,20 @@ void VulkanApp::reCreateSwapChain()
 	createDeferredFramebuffer();
 	createDeferredCommandBuffers();
 	
+	standardShadow.createFramebuffer();
+	standardShadow.createCommandBuffers();
+
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
 		PostProcess* thisPostProcess = postProcessStages[i];
 
-		thisPostProcess->createFramebuffer();
+		if (!postProcessStages[i]->isCSPostProcess)
+			thisPostProcess->createFramebuffer();
+
 		thisPostProcess->createCommandBuffers();
 
 	}
-	createFramebuffers();
+	//createFramebuffers();
 	createFrameBufferCommandBuffers();
 }
 
@@ -2044,8 +2636,9 @@ void VulkanApp::createImageViews()
 	}
 
 	sceneImageView = createImageView(sceneImage, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	swapChainImageViews.resize(swapChainImages.size());	
+}
+void VulkanApp::createSwapChainImageViews() {
+	swapChainImageViews.resize(swapChainImages.size());
 
 	for (uint32_t i = 0; i < swapChainImages.size(); i++)
 	{
@@ -2192,6 +2785,103 @@ void VulkanApp::transitionImageLayout(VkImage image, VkFormat format, VkImageLay
 
 		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else {
+		throw std::invalid_argument("unsupported layout transition!");
+	}
+
+	vkCmdPipelineBarrier(
+		commandBuffer,
+		sourceStage, destinationStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &barrier
+	);
+
+	endSingleTimeCommands(commandPool, commandBuffer, objectDrawQueue);
+}
+
+void VulkanApp::transitionMipmapImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange mipSubRange, VkCommandPool commandPool)
+{
+	VkCommandBuffer commandBuffer = beginSingleTimeCommands(commandPool);
+
+	VkImageMemoryBarrier barrier = {};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+
+	barrier.subresourceRange = mipSubRange;
+
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	}
+
+	else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_GENERAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;
+		
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
 		barrier.srcAccessMask = 0;
@@ -2483,6 +3173,7 @@ void VulkanApp::createFramebuffers()
 		framebufferInfo.renderPass = frameBufferRenderPass;
 		framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());;
 		framebufferInfo.pAttachments = attachments.data();
+		
 		framebufferInfo.width = swapChainExtent.width;
 		framebufferInfo.height = swapChainExtent.height;
 		framebufferInfo.layers = LayerCount;
@@ -2752,7 +3443,7 @@ void VulkanApp::createFrameBufferCommandBuffers()
 			renderPassInfo.renderArea.extent = swapChainExtent;
 			renderPassInfo.renderArea.extent.width /= 2;
 
-			renderPassInfo.renderArea.offset = { (int32_t)renderPassInfo.renderArea.extent.width, 0 };
+			renderPassInfo.renderArea.offset = { static_cast<int32_t>(renderPassInfo.renderArea.extent.width), 0 };
 			
 
 			std::array<VkClearValue, 1> clearValues = {};
@@ -2808,22 +3499,34 @@ void VulkanApp::createFrameBufferCommandBuffers()
 	}
 }
 
-void VulkanApp::drawFrame(float deltaTime)
-{
+void VulkanApp::drawFrame(float deltaTime) {
 
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), objectDrawSemaphore, VK_NULL_HANDLE, &imageIndex);
+	int result;// = -49340534;
+	if (bRenderToHmd) {
+		int index;
+		ovr_GetTextureSwapChainCurrentIndex(session, textureSwapChain.textureChain, &index);//couldnt cast and take address of imageIndex
+		if (index > 0 && index < textureSwapChain.texElements.size()) { result = VK_SUCCESS; } 
+		//result = ovr_WaitToBeginFrame(session, 0);
+		imageIndex = index;
+	} else {
+		result = vkAcquireNextImageKHR(device, swapChain, std::numeric_limits<uint64_t>::max(), objectDrawSemaphore, VK_NULL_HANDLE, &imageIndex);
+	}
+	// Get next available index of the texture swap chain
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		reCreateSwapChain();
 		return;
-	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+	} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 	{
 		throw std::runtime_error("failed to acquire swap chain image!");
 	}
 
+	if (bRenderToHmd) {//make sure we start right before vsync to get a "running start"(valve) or "adaptive queue ahead" (oculus)
+		//result = ovr_BeginFrame(session, 0);
+	}
+	
 	updateUniformBuffers(0, deltaTime);
 
 	//objectDrawQueue
@@ -2833,8 +3536,15 @@ void VulkanApp::drawFrame(float deltaTime)
 	VkSemaphore firstWaitSemaphores[] = { objectDrawSemaphore };
 
 	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = firstWaitSemaphores;
+
+	if (bRenderToHmd) {
+		//we've already done WaitToBeginFrame so there should be sync issues when useing no semaphore
+		submitInfo.waitSemaphoreCount = 0;
+		submitInfo.pWaitSemaphores = nullptr;
+	} else {
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = firstWaitSemaphores;
+	}
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &deferredCommandBuffer;
@@ -2848,10 +3558,34 @@ void VulkanApp::drawFrame(float deltaTime)
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
-	//postProcessQueue
 	VkSemaphore prevSemaphore = imageAvailableSemaphore;
 	VkSemaphore currentSemaphore;
 
+	//DrawShadow
+
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &prevSemaphore;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &standardShadow.commandBuffer;
+
+	currentSemaphore = standardShadow.semaphore;
+
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &currentSemaphore;
+
+	if (vkQueueSubmit(standardShadow.queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
+	{
+		throw std::runtime_error("failed to submit draw command buffer!");
+	}
+
+	prevSemaphore = currentSemaphore;
+
+
+	//prevSemaphore = voxelizator.createMipmaps(prevSemaphore);
+
+
+	//postProcessQueue
 	for(size_t i = 0; i < postProcessStages.size(); i++)
 	{
 		PostProcess* thisPostProcess = postProcessStages[i];
@@ -2875,7 +3609,7 @@ void VulkanApp::drawFrame(float deltaTime)
 		prevSemaphore = currentSemaphore;
 	}
 
-
+	VkSemaphore postProcessSignalSemaphores[] = { postProcessSemaphore };
 
 	//frameQueue
 	submitInfo.waitSemaphoreCount = 1;
@@ -2884,16 +3618,21 @@ void VulkanApp::drawFrame(float deltaTime)
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &frameBufferCommandBuffers[imageIndex];
 
-	VkSemaphore postProcessSignalSemaphores[] = { postProcessSemaphore };
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = postProcessSignalSemaphores;
 
+	vkQueueWaitIdle(presentQueue);
 	if (vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
 	{
 		throw std::runtime_error("failed to submit draw command buffer!");
 	}
 
-	vkQueueWaitIdle(presentQueue);		
+	if (bRenderToHmd) {
+		//sync to lastpostprocess->material->queue? or present queue?
+		//so basically same as the else case except a command buffer that uses the textureSwapchain stuff(frame buffer)
+		// Commit the changes to the texture swap chain
+		ovr_CommitTextureSwapChain(session, textureSwapChain.textureChain);
+	}
 
 	if (bVRmode)
 	{
@@ -2949,7 +3688,6 @@ void VulkanApp::drawFrame(float deltaTime)
 		}
 
 
-
 		//frameQueue
 		submitInfo.waitSemaphoreCount = 1;
 		submitInfo.pWaitSemaphores = &currentSemaphore;
@@ -2958,40 +3696,74 @@ void VulkanApp::drawFrame(float deltaTime)
 		submitInfo.pCommandBuffers = &frameBufferCommandBuffers2[imageIndex];
 
 		VkSemaphore postProcessSignalSemaphores[] = { postProcessSemaphore };
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = postProcessSignalSemaphores;
-
+		if (bRenderToHmd) {
+			submitInfo.signalSemaphoreCount = 0;
+			submitInfo.pSignalSemaphores = nullptr;
+		} else {
+			submitInfo.signalSemaphoreCount = 1;
+			submitInfo.pSignalSemaphores = postProcessSignalSemaphores;
+		}
 		if (vkQueueSubmit(presentQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS)
 		{
 			throw std::runtime_error("failed to submit draw command buffer!");
 		}
+
+		if (bRenderToHmd) {
+			//sync to lastpostprocess->material->queue? or present queue?
+			//so basically same as the else case except a command buffer that uses the textureSwapchain stuff(frame buffer)
+			// Commit the changes to the texture swap chain
+			ovr_CommitTextureSwapChain(session, textureSwapChain.textureChain);
+		}
+
 	}
 
-	//presentQueue
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	if (bRenderToHmd) {
+        // Submit rendered eyes as an EyeFov layer
+        //ovrLayerEyeFov ld;
+        //ld.Header.Type  = ovrLayerType_EyeFov;
+        //ld.Header.Flags = 0;
+        //ld.SensorSampleTime  = sensorSampleTime;
+        //for (auto eye: { ovrEye_Left, ovrEye_Right })
+        //{
+        //    ld.ColorTexture[eye] = perEye[eye].tex.textureChain;
+        //    ld.Viewport[eye]     = perEye[eye].tex.GetViewport();
+        //    ld.Fov[eye]          = hmdDesc.DefaultEyeFov[eye];
+        //    ld.RenderPose[eye]   = eyeRenderPose[eye];
+        //}
+        //ovrLayerHeader* layers = &ld.Header;
+        //ovrResult result = ovr_SubmitFrame(session, frameIndex, nullptr, &layers, 1);
+		//const ovrTrackingState ts = 
+		//ovr_CalcEyePoses(ts.HeadPose.ThePose, mHmdToEyeOffsets, mMainLayer.RenderPose);
+        ovrLayerHeader* layers = &layer.Header;
+        ovrResult result = ovr_SubmitFrame(session, frameIndex, nullptr, &layers, 1);
 
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = postProcessSignalSemaphores;
+		//result = ovr_EndFrame(session, 0, nullptr, &layers, 1);
+	} else {
+		//presentQueue
+		VkPresentInfoKHR presentInfo = {};
+		presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
-	VkSwapchainKHR swapChains[] = { swapChain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &imageIndex;
-	presentInfo.pResults = nullptr; // Optional
+		presentInfo.waitSemaphoreCount = 1;
+		presentInfo.pWaitSemaphores = postProcessSignalSemaphores;
 
-	result = vkQueuePresentKHR(presentQueue, &presentInfo);
+		VkSwapchainKHR swapChains[] = { swapChain };
+		presentInfo.swapchainCount = 1;
+		presentInfo.pSwapchains = swapChains;
+		presentInfo.pImageIndices = &imageIndex;
+		presentInfo.pResults = nullptr; // Optional
 
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
-	{
-		reCreateSwapChain();
+		result = vkQueuePresentKHR(presentQueue, &presentInfo);
+
+		if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+		{
+			reCreateSwapChain();
+		} else if (result != VK_SUCCESS) {
+			throw std::runtime_error("failed to present swap chain image!");
+		}
+
+		vkQueueWaitIdle(presentQueue);
 	}
-	else if (result != VK_SUCCESS) {
-		throw std::runtime_error("failed to present swap chain image!");
-	}
-
-	vkQueueWaitIdle(presentQueue);
-	
+	++frameIndex;
 }
 
 void VulkanApp::createSemaphores()
@@ -3002,8 +3774,8 @@ void VulkanApp::createSemaphores()
 	if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
 		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
 		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &objectDrawSemaphore) != VK_SUCCESS ||
-		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &postProcessSemaphore) != VK_SUCCESS
-		
+		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &postProcessSemaphore) != VK_SUCCESS || 
+		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &mipMapStartSemaphore) != VK_SUCCESS 
 		) {
 
 		throw std::runtime_error("failed to create semaphores!");
@@ -3029,15 +3801,13 @@ void VulkanApp::mainLoop()
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 
-		
-
 		currentTime = (double)time(NULL);
 
 		fpstracker++;
 
 		if (currentTime - oldTime >= 1) {
 
-			fps = (int)(fpstracker / (currentTime - oldTime));
+			fps = static_cast<int>(fpstracker / (currentTime - oldTime));
 			fpstracker = 0;
 			oldTime = currentTime;
 
@@ -3046,13 +3816,13 @@ void VulkanApp::mainLoop()
 		}
 		
 		auto currentTime = std::chrono::high_resolution_clock::now();
-		float time = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() * 0.001f;
+		totalTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - startTime).count() * 0.001f;
 
 		deltaTime = std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - _oldTime).count() * 0.001f;
 
 		
 		getAsynckeyState();
-		drawFrame((float)deltaTime);
+		drawFrame(static_cast<float>(deltaTime));
 
 		_oldTime = currentTime;
 	}
@@ -3062,15 +3832,27 @@ void VulkanApp::mainLoop()
 
 void VulkanApp::updateUniformBuffers(unsigned int EYE, float deltaTime)
 {
+	if (bRotateMainLight)
+	{
+		mainLightAngle += static_cast<float>(deltaTime) * 0.2f;
+		swingMainLight();
+	}
+	
+	
+	SetDirectionLightMatrices(directionLights[0], 19.0f, 5.0f, 0.0f, 20.0f);
+
+	autoCameraMoving();
+
 	UniformBufferObject ubo = {};
 	
 	ubo.modelMat = glm::mat4(1.0);
+	
 	
 
 	if (bVRmode)
 	{
 		ubo.viewMat = camera.viewMatforVR[EYE];
-		ubo.projMat = camera.projMatforVR;
+		ubo.projMat = camera.projMatforVR[EYE];
 		ubo.viewProjMat = camera.viewProjMatforVR[EYE];
 		ubo.InvViewProjMat = camera.InvViewProjMatforVR[EYE];
 		ubo.modelViewProjMat = ubo.viewProjMat;
@@ -3089,12 +3871,21 @@ void VulkanApp::updateUniformBuffers(unsigned int EYE, float deltaTime)
 	ubo.InvTransposeMat = ubo.modelMat;
 	
 
+	ShadowUniformBuffer subo = {};
+	subo.viewProjMat = directionLights[0].projMat * directionLights[0].viewMat;
+	subo.invViewProjMat = glm::inverse(subo.viewProjMat);	
+
+	void* shadowdata;
+	vkMapMemory(device, lightingMaterial->shadowConstantBufferMemory, 0, sizeof(ShadowUniformBuffer), 0, &shadowdata);
+	memcpy(shadowdata, &subo, sizeof(ShadowUniformBuffer));
+	vkUnmapMemory(device, lightingMaterial->shadowConstantBufferMemory);
+
 	for (size_t i = 0; i < objectManager.size(); i++)
 	{
 		Object *thisObject = objectManager[i];
 
 		if(thisObject->bRoll)
-		thisObject->UpdateOrbit(deltaTime * 20.0f, 0.0f, 0.0f);
+			thisObject->UpdateOrbit(deltaTime * thisObject->rollSpeed, 0.0f, 0.0f);
 		
 		ubo.modelMat = thisObject->modelMat;
 		ubo.modelViewProjMat = ubo.viewProjMat * thisObject->modelMat;
@@ -3103,19 +3894,39 @@ void VulkanApp::updateUniformBuffers(unsigned int EYE, float deltaTime)
 		A[3] = glm::vec4(0, 0, 0, 1);
 		ubo.InvTransposeMat = glm::transpose(glm::inverse(A));
 
+
+		//shadow
+		{
+			void* data;
+			//vkMapMemory(device, thisObject->shadowMaterial->ShadowConstantBufferMemory, 0, sizeof(ShadowUniformBuffer), 0, &data);
+			//memcpy(data, &subo, sizeof(ShadowUniformBuffer));
+			//vkUnmapMemory(device, thisObject->shadowMaterial->ShadowConstantBufferMemory);
+
+
+			ObjectUniformBuffer obu = {};
+			obu.modelMat = thisObject->modelMat;
+
+			vkMapMemory(device, thisObject->shadowMaterial->objectUniformMemory, 0, sizeof(ObjectUniformBuffer), 0, &data);
+			memcpy(data, &obu, sizeof(ObjectUniformBuffer));
+			vkUnmapMemory(device, thisObject->shadowMaterial->objectUniformMemory);
+
+
+		}
+
 		for (size_t k = 0; k < thisObject->materials.size(); k++)
 		{
 			void* data;
 			vkMapMemory(device, thisObject->materials[k]->uniformBufferMemory, 0, sizeof(UniformBufferObject), 0, &data);
 			memcpy(data, &ubo, sizeof(UniformBufferObject));
 			vkUnmapMemory(device, thisObject->materials[k]->uniformBufferMemory);
+
 		}
 		
 	}
 
 	
 
-	{
+		{
 		UniformBufferObject offScreenUbo = {};
 
 		offScreenUbo.modelMat = glm::mat4(1.0);
@@ -3137,6 +3948,11 @@ void VulkanApp::updateUniformBuffers(unsigned int EYE, float deltaTime)
 		vkUnmapMemory(device, lightingMaterial->uniformBufferMemory);
 		
 		void* directionLightsData;
+		
+		vkMapMemory(device, voxelConetracingMaterial->directionalLightBufferMemory, 0, sizeof(DirectionalLight) * directionLights.size(), 0, &directionLightsData);
+		memcpy(directionLightsData, &directionLights[0], sizeof(DirectionalLight) * directionLights.size());
+		vkUnmapMemory(device, voxelConetracingMaterial->directionalLightBufferMemory);
+		
 		vkMapMemory(device, lightingMaterial->directionalLightBufferMemory, 0, sizeof(DirectionalLight) * directionLights.size(), 0, &directionLightsData);
 		memcpy(directionLightsData, &directionLights[0], sizeof(DirectionalLight) * directionLights.size());
 		vkUnmapMemory(device, lightingMaterial->directionalLightBufferMemory);
@@ -3173,11 +3989,19 @@ void VulkanApp::updateUniformBuffers(unsigned int EYE, float deltaTime)
 		UniformBufferObject offScreenUbo = {};
 
 		offScreenUbo.modelMat = glm::mat4(1.0);
+
+		VoxelRenderMaterial* isVXGIMat = dynamic_cast<VoxelRenderMaterial*>(postProcessStages[i]->material);
+
+		if (isVXGIMat != NULL)
+		{
+			offScreenUbo.modelMat = voxelizator.standardObject->modelMat;
+		}
+
 		offScreenUbo.viewMat = ubo.viewMat;
 		offScreenUbo.projMat = ubo.projMat;
 		offScreenUbo.viewProjMat = ubo.viewProjMat;
 		offScreenUbo.InvViewProjMat = ubo.InvViewProjMat;
-		offScreenUbo.modelViewProjMat = offScreenUbo.viewProjMat;
+		offScreenUbo.modelViewProjMat = offScreenUbo.viewProjMat * offScreenUbo.modelMat;
 		offScreenUbo.InvTransposeMat = offScreenUbo.modelMat;
 		offScreenUbo.cameraWorldPos = ubo.cameraWorldPos;
 
@@ -3189,6 +4013,7 @@ void VulkanApp::updateUniformBuffers(unsigned int EYE, float deltaTime)
 		vkUnmapMemory(device, postProcessStages[i]->material->uniformBufferMemory);
 
 		BlurMaterial* isBlurMat = dynamic_cast<BlurMaterial*>(postProcessStages[i]->material);
+		ComputeBlurMaterial* isComputeBlurMat = dynamic_cast<ComputeBlurMaterial*>(postProcessStages[i]->material);
 
 		if(isBlurMat != NULL)
 		{
@@ -3202,6 +4027,28 @@ void VulkanApp::updateUniformBuffers(unsigned int EYE, float deltaTime)
 			memcpy(data, &blurUbo, sizeof(BlurUniformBufferObject));
 			vkUnmapMemory(device, isBlurMat->blurUniformBufferMemory);
 		}
+		else if(isComputeBlurMat != NULL)
+		{
+			BlurUniformBufferObject blurUbo;
+
+			if (bVRmode)
+			{
+				blurUbo.widthGap = postProcessStages[i]->getImageSize().x * 0.5f;
+			}
+			else
+			{
+				blurUbo.widthGap = postProcessStages[i]->getImageSize().x;
+				
+			}
+
+			blurUbo.heightGap = postProcessStages[i]->getImageSize().y;
+
+			void* data;
+			vkMapMemory(device, isComputeBlurMat->blurUniformBufferMemory, 0, sizeof(BlurUniformBufferObject), 0, &data);
+			memcpy(data, &blurUbo, sizeof(BlurUniformBufferObject));
+			vkUnmapMemory(device, isComputeBlurMat->blurUniformBufferMemory);
+		}
+		
 	}
 
 	{
@@ -3231,12 +4078,12 @@ void VulkanApp::cleanUpSwapChain()
 	vkDestroyImageView(device, depthImageView, nullptr);
 	vkDestroyImage(device, depthImage, nullptr);
 	vkFreeMemory(device, depthImageMemory, nullptr);
+	
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
 		PostProcess* thisPostProcess = postProcessStages[i];
 		thisPostProcess->cleanUp();
-		
 
 		vkDestroyFramebuffer(device, thisPostProcess->frameBuffer, nullptr);
 		vkFreeCommandBuffers(device, thisPostProcess->commandPool, 1, &thisPostProcess->commandBuffer);
@@ -3282,19 +4129,15 @@ void VulkanApp::cleanUpSwapChain()
 	vkFreeCommandBuffers(device, frameBufferCommandPool, static_cast<uint32_t>(frameBufferCommandBuffers.size()), frameBufferCommandBuffers.data());
 	vkFreeCommandBuffers(device, frameBufferCommandPool, static_cast<uint32_t>(frameBufferCommandBuffers2.size()), frameBufferCommandBuffers2.data());
 	
-
 	for (size_t i = 0; i < materialManager.size(); i++)
 	{
 		materialManager[i]->cleanPipeline();
 	}
 
-	/*
-	lightingMaterial->cleanPipeline();
-	hdrHighlightMaterial->cleanPipeline();
-	horizontalMaterial->cleanPipeline();
-	verticalMaterial->cleanPipeline();
-	lastPostProcessMaterial->cleanPipeline();
-	*/
+	for (size_t i = 0; i < objectManager.size(); i++)
+	{
+		objectManager[i]->shadowMaterial->cleanPipeline();
+	}
 
 	for (size_t i = 0; i < NUM_DEBUGDISPLAY; i++)
 	{
@@ -3316,6 +4159,7 @@ void VulkanApp::cleanUpSwapChain()
 		thisPostProcess->material->cleanPipeline();
 		vkDestroyRenderPass(device, thisPostProcess->renderPass, nullptr);
 	}
+	
 
 	vkDestroyRenderPass(device, frameBufferRenderPass, nullptr);
 
@@ -3331,6 +4175,8 @@ void VulkanApp::cleanUp()
 {
 	cleanUpSwapChain();
 
+	standardShadow.cleanUp();
+
 	AssetDatabase::GetInstance()->cleanUp();
 
 	for (size_t i = 0; i < objectManager.size(); i++)
@@ -3341,13 +4187,30 @@ void VulkanApp::cleanUp()
 	delete lightingMaterial;
 	delete hdrHighlightMaterial;
 
-	delete horizontalMaterial;
-	delete verticalMaterial;
 
-	delete horizontalMaterial2;
-	delete verticalMaterial2;
+	delete HBMaterial;
+	delete VBMaterial;
+	delete HBMaterial2;
+	delete VBMaterial2;
+
+	/*
+	delete compHBMaterial;
+	delete compVBMaterial;
+	delete compHBMaterial2;
+	delete compVBMaterial2;
+	*/
 
 	delete lastPostProcessMaterial;
+
+	//if (standShadowMaterial != NULL)
+	//	delete standShadowMaterial;
+
+	if(voxelRenderMaterial != NULL)
+		delete voxelRenderMaterial;
+
+	delete voxelConetracingMaterial;
+	//delete BarrelAndAberrationPostProcessMaterial;
+
 	delete frameBufferMaterial;
 
 
@@ -3364,8 +4227,11 @@ void VulkanApp::cleanUp()
 	vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
 	vkDestroySemaphore(device, postProcessSemaphore, nullptr);
 	vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
+	vkDestroySemaphore(device, mipMapStartSemaphore, nullptr);
 
 	vkDestroyCommandPool(device, frameBufferCommandPool, nullptr);
+
+	standardShadow.shutDown();
 
 	for (size_t i = 0; i < postProcessStages.size(); i++)
 	{
@@ -3374,9 +4240,10 @@ void VulkanApp::cleanUp()
 		delete thisPostProcess;
 	}
 
-	//vkDestroyCommandPool(device, sceneStage->commandPool, nullptr);
-	//delete sceneStage;
-
+	vkDestroyRenderPass(device, voxelizator.renderPass, nullptr);
+	vkDestroyCommandPool(device, voxelizator.commandPool, nullptr);
+	voxelizator.shutDown();
+	
 	vkDestroyCommandPool(device, deferredCommandPool, nullptr);
 
 	vkDestroyDevice(device, nullptr);
@@ -3386,6 +4253,7 @@ void VulkanApp::cleanUp()
 	glfwDestroyWindow(window);
 	glfwTerminate();
 
+	shutdownOVR();
 	
 }
 

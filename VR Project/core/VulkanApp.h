@@ -1,4 +1,8 @@
 #pragma once
+// Include the OculusVR SDK
+#include <OVR_CAPI_Vk.h>
+#include <Extras/OVR_Math.h>
+#include "OculusSDKClasses.h"
 
 #include "VulkanDebug.h"
 #include "VulkanQueue.h"
@@ -12,6 +16,9 @@
 #include "../actors/Camera.h"
 #include "../actors/Light.h"
 
+#include "../core/Shadow.h"
+
+#include "Voxelization.h"
 
 #include <sstream>
 
@@ -31,7 +38,11 @@ static int fpstracker = 0;
 
 static std::chrono::time_point<std::chrono::steady_clock> startTime;
 static std::chrono::time_point<std::chrono::steady_clock> _oldTime;
+
+static double totalTime;
 static double deltaTime;
+
+static float mainLightAngle = 1.0f;
 
 static std::string convertToString(int number)
 {
@@ -54,6 +65,47 @@ class VulkanApp
 public:
 	VulkanApp();
 	~VulkanApp();
+
+
+
+
+
+	////////////////////////
+	/////// Oculus VR //////
+	////////////////////////
+	//vars
+	ovrSession session;
+	ovrFovPort g_EyeFov[2];
+	ovrGraphicsLuid luid;
+	ovrHmdDesc desc;
+	ovrSizei resolution;
+	glm::vec3 lastHmdPos;
+	glm::vec3 lastHmdEuler;
+	OVR::Sizei swapSize;//needed?
+	VkExtent2D swapExtent;
+	char extensionNames[4096];
+	uint32_t extensionNamesSize = sizeof(extensionNames);
+	long long frameIndex = 0;
+	std::vector<const char*> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+	TextureSwapChain textureSwapChain;
+	RenderPass oculusRenderPass;
+	ovrLayerEyeFov layer;
+	VkFormat oculusSwapFormat = VK_FORMAT_R8G8B8A8_SRGB;
+	VkFormat oculusDepthFormat = VK_FORMAT_D32_SFLOAT;
+	bool bRenderToHmd = false;
+	VkSemaphore mipMapStartSemaphore;
+	ovrPosef eyeRenderPose[ovrEye_Count];
+	//func
+	void initOVR();
+	void initOVRLayer();
+	void shutdownOVR();
+	void queryHmdOrientationAndPosition();
+
+
+
+
+
+
 
 	void initVulkan();
 	void initWindow();
@@ -84,6 +136,7 @@ public:
 	void cleanUpSwapChain();
 
 	void createImageViews();	
+	void createSwapChainImageViews();
 
 	void createFramebuffers();
 	void createFrameBufferRenderPass();
@@ -115,6 +168,8 @@ public:
 	void endSingleTimeCommands(VkCommandPool commandPool, VkCommandBuffer commandBuffer, VkQueue queue);
 
 	void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandPool commandPool);
+	void transitionMipmapImageLayout(VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkImageSubresourceRange mipSubRange, VkCommandPool commandPool);
+
 	void createDepthResources();
 
 	VkFormat findSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
@@ -149,6 +204,64 @@ public:
 
 	static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objType, uint64_t obj, size_t location,	int32_t code, const char* layerPrefix, const char* msg,	void* userData);
 	
+	void switchTheLastPostProcess(unsigned int from, unsigned int to)
+	{
+		if (postProcessStages.size() > to)
+		{
+			if (theLastPostProcess == postProcessStages[to])
+				theLastPostProcess = postProcessStages[from];
+			else
+				theLastPostProcess = postProcessStages[to];
+		}
+	}	
+
+	void swingMainLight()
+	{
+		SwingXAxisDirectionalLight(directionLights[0].lightInfo, 1.0f, mainLightAngle, 0.5f);
+	}
+
+	void updateDrawMode()
+	{
+		void* data;
+		vkMapMemory(device, lightingMaterial->optionBufferMemory, 0, sizeof(uint32_t), 0, &data);
+		memcpy(data, &drawMode, sizeof(uint32_t));
+		vkUnmapMemory(device, lightingMaterial->optionBufferMemory);
+	}
+
+	void autoCameraMoving()
+	{
+		if (autoCameraMove >= 0)
+		{
+			float speed = 3.0f;
+			if (autoCameraMove == 0)
+			{
+				camera.UpdateOrbit(0.0f, 0.0f, -static_cast<float>(deltaTime)*speed);
+			}
+			else if (autoCameraMove == 1)
+			{
+				camera.UpdateOrbit(0.0f, 0.0f, static_cast<float>(deltaTime)*speed);
+			}
+			else if (autoCameraMove == 2)
+			{
+				camera.UpdatePosition(-static_cast<float>(deltaTime)*speed, 0.0f, 0.0f);
+			}
+			else if (autoCameraMove == 3)
+			{
+				camera.UpdatePosition(static_cast<float>(deltaTime)*speed, 0.0f, 0.0f);
+			}
+			else if (autoCameraMove == 4)
+			{
+				camera.UpdateOrbit(static_cast<float>(deltaTime)*speed, 0.0f, 0.0f);
+			}
+			else if (autoCameraMove == 5)
+			{
+				camera.UpdateOrbit(-static_cast<float>(deltaTime)*speed, 0.0f, 0.0f);
+			}
+		}
+		
+
+	}
+
 	//bool bIsRightEyeDrawing;
 
 private:	
@@ -163,6 +276,14 @@ private:
 	VkDevice device;
 
 	VkQueue objectDrawQueue;
+	
+	VkQueue TagQueue;
+
+	VkQueue AllocationQueue;
+
+	VkQueue MipmapQueue;
+
+
 
 	VkQueue lightingQueue;
 
@@ -197,19 +318,26 @@ private:
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSet descriptorSet;
 
-
+	VoxelConetracingMaterial* voxelConetracingMaterial;
 	LightingMaterial* lightingMaterial;
 
 	HDRHighlightMaterial* hdrHighlightMaterial;
 
-	BlurMaterial *horizontalMaterial;
-	BlurMaterial *verticalMaterial;
+	BlurMaterial *HBMaterial;
+	BlurMaterial *VBMaterial;
 
-	BlurMaterial *horizontalMaterial2;
-	BlurMaterial *verticalMaterial2;
+	BlurMaterial *HBMaterial2;
+	BlurMaterial *VBMaterial2;
+
+	ComputeBlurMaterial *compHBMaterial;
+	ComputeBlurMaterial *compVBMaterial;
+
+	ComputeBlurMaterial *compHBMaterial2;
+	ComputeBlurMaterial *compVBMaterial2;
+
+	StandardShadow standardShadow;
 
 	singleTriangular* offScreenPlane;
-
 	singleTriangular* offScreenPlaneforPostProcess;
 
 	singleQuadral* debugDisplayPlane;
@@ -217,6 +345,11 @@ private:
 	std::vector<DebugDisplayMaterial*> debugDisplayMaterials;
 
 	LastPostProcessgMaterial* lastPostProcessMaterial;
+
+	VoxelRenderMaterial* voxelRenderMaterial;
+
+	//VR BARREL AND ABERRATION
+	HDRHighlightMaterial* BarrelAndAberrationPostProcessMaterial;
 	FinalRenderingMaterial* frameBufferMaterial;
 
 	VkRenderPass deferredRenderPass;
@@ -248,9 +381,13 @@ private:
 
 	std::vector<PostProcess*> postProcessStages;
 
+	Voxelization voxelizator;
+
 	//for FrameRender
 	PostProcess* sceneStage;
 	PostProcess* theLastPostProcess;
+
+	
 	
 };
 
