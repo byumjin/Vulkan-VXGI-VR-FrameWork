@@ -129,7 +129,7 @@ One of the advantage of using voxel contracing is that we can get ambient occlus
 
 | Update Uniform Buffers | Draw Objects | Draw Shadow | Post-Process Effects | Draw Main FrameBuffer | Present KHR | TOTAL |
 | --- | --- | --- | --- | --- | --- | --- |
-| 1.5 | 1.0 | 0.5 | 0.6 | 5.2 | 0.7 | 9.8 |
+| 1.5 ms | 1.0 ms | 0.5 ms | 0.6 ms | 5.2 ms | 0.7 ms | 9.8 ms |
 
 
 ### Performance of each post-process effect
@@ -138,7 +138,7 @@ One of the advantage of using voxel contracing is that we can get ambient occlus
 
 | VXGI | Lighting | HDR | HorizontalBlur x 1/2 | VerticalBlur x 1/4 | HorizontalBlur x 1/8 | VerticalBlur x 1/8 | Tone Mapping |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| 0.4 | 0.07 | 0.02 | 0.04 | 0.01 | 0.005 | 0.005 | 0.03 |
+| 0.4 ms | 0.07 ms | 0.02 ms | 0.04 ms | 0.01 ms | 0.005 ms | 0.005 ms | 0.03 ms |
 
 
 
