@@ -123,6 +123,25 @@ One of the advantage of using voxel contracing is that we can get ambient occlus
 | ![](img/VXGI/Lighting.png) | ![](img/VXGI/L+AO.png) | ![](img/VXGI/L+AO+GI.png) |
 
 
+### Performance of each graphics pipeline stage
+
+![](img/VXGI/pgps.png)
+
+| Update Uniform Buffers | Draw Objects | Draw Shadow | Post-Process Effects | Draw Main FrameBuffer | Present KHR | TOTAL |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1.5 | 1.0 | 0.5 | 0.6 | 5.2 | 0.7 | 9.8 |
+
+
+### Performance of each post-process effect
+
+![](img/VXGI/pppe.png)
+
+| VXGI | Lighting | HDR | HorizontalBlur x 1/2 | VerticalBlur x 1/4 | HorizontalBlur x 1/8 | VerticalBlur x 1/8 | Tone Mapping |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0.4 | 0.07 | 0.02 | 0.04 | 0.01 | 0.005 | 0.005 | 0.03 |
+
+
+
 
 
 ## VR mode
