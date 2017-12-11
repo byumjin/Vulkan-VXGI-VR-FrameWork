@@ -6,7 +6,7 @@
 
 # Demo Video
 
-![](img/youtube.png)
+[![](img/youtube.png)](https://www.youtube.com/watch?v=gxsw70vPujc)
 
 
 # Overview
@@ -125,7 +125,7 @@ One of the advantage of using voxel contracing is that we can get ambient occlus
 
 ### Performance of each graphics pipeline stage (ms)
 
-![](img/VXGI/pgps.png)
+![](img/VXGI/pppe.png)
 
 | Update Uniform Buffers | Draw Objects | Draw Shadow | Post-Process Effects | Draw Main FrameBuffer | Present KHR | TOTAL |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -134,7 +134,7 @@ One of the advantage of using voxel contracing is that we can get ambient occlus
 
 ### Performance of each post-process effect (ms)
 
-![](img/VXGI/pppe.png)
+![](img/VXGI/pgps.png)
 
 | VXGI | Lighting | HDR | HorizontalBlur x 1/2 | VerticalBlur x 1/4 | HorizontalBlur x 1/8 | VerticalBlur x 1/8 | Tone Mapping |
 | --- | --- | --- | --- | --- | --- | --- | --- |
