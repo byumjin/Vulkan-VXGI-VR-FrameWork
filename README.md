@@ -1,7 +1,7 @@
 # Vulkan Vxgi VR Engine
 
 * University of Pennsylvania, CIS 565: GPU Programming and Architecture, Final Project
-* Byumjin Kim & Josh Lawrence 
+* [Byumjin Kim](https://github.com/byumjin) & [Josh Lawrence](https://github.com/loshjawrence)
 
 
 # Demo Video
@@ -15,7 +15,7 @@ We have implemented Voxel Global illumination and VR pipeline with Vulkan for th
 We have decided to use Vulcan to implement what each team member is interested in. 
 However, the relevance of the objects was too different each other, and the scale was too large to merge them in a given time.
 Thus, we could not use most of our time to collaborate.
-Byumjin Kim have taken to implement the engine base and VXGI which referred to [Interactive indirect illumination using voxel cone tracing](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.225.5903&rep=rep1&type=pdf), and Josh Lawrence have taken the VR mode and the part for interacting with Oculus HMD.
+[Byumjin Kim](https://github.com/byumjin) have taken to implement the engine base and VXGI which referred to [Interactive indirect illumination using voxel cone tracing](http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.225.5903&rep=rep1&type=pdf), and [Josh Lawrence](https://github.com/loshjawrence) have taken the VR mode and the part for interacting with Oculus HMD.
 
 
 ## Deferred Rendering
